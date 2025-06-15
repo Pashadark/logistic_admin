@@ -1,0 +1,56 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block content %}
+<div class="filter-card">
+  <div class="filter-header">Фильтры</div>
+  <form method="get" class="filter-form">
+    <div class="row">
+      <div class="col-md-3">
+        <div class="form-group">
+          {{ filter_form.search.label_tag }}
+          {{ filter_form.search }}
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="form-group">
+          {{ filter_form.status.label_tag }}
+          {{ filter_form.status }}
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="form-group">
+          {{ filter_form.type.label_tag }}
+          {{ filter_form.type }}
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="form-group">
+          {{ filter_form.date_from.label_tag }}
+          {{ filter_form.date_from }}
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="form-group">
+          {{ filter_form.date_to.label_tag }}
+          {{ filter_form.date_to }}
+        </div>
+      </div>
+      <div class="col-md-1 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">Применить</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{{ block.super }}
+{% endblock %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  <li>
+    <a href="?export=csv" class="export-btn">
+      📊 Экспорт в CSV
+    </a>
+  </li>
+{% endblock %}

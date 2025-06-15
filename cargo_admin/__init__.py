@@ -1,0 +1,1 @@
+default_app_config = 'cargo_admin.apps.CargoAdminConfig'

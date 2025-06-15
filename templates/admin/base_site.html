@@ -1,0 +1,150 @@
+{% extends "admin/base.html" %}
+
+{% load static %}
+
+{% block title %}{{ title }} | LogisticPro Admin{% endblock %}
+
+{% block extrastyle %}
+<style>
+:root {
+  --primary: #0a1e32;
+  --secondary: #00b4d8;
+  --accent: #0077b6;
+  --light: #f8f9fa;
+  --dark: #212529;
+}
+
+body {
+  background-color: #f0f2f5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#header {
+  background: var(--primary) !important;
+  color: white !important;
+  padding: 15px 0;
+}
+
+#branding h1 {
+  color: white !important;
+  font-weight: 600;
+}
+
+.module h2, .module caption, .inline-group h2 {
+  background: var(--secondary) !important;
+  font-weight: 500;
+}
+
+div.breadcrumbs {
+  background: var(--accent) !important;
+  padding: 10px 15px;
+}
+
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+  background: var(--primary) !important;
+  border: none !important;
+  border-radius: 4px;
+  padding: 8px 15px;
+  font-weight: 500;
+}
+
+.button:hover, input[type=submit]:hover, input[type=button]:hover {
+  background: var(--accent) !important;
+}
+
+a:link, a:visited {
+  color: var(--primary);
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+#changelist-filter {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+#changelist table {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#changelist table thead th {
+  background: var(--light);
+  font-weight: 600;
+}
+
+#changelist table tbody tr:hover {
+  background-color: #e9f7fe;
+}
+
+.paginator {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.filter-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+
+.filter-header {
+  font-size: 1.2rem;
+  color: var(--primary);
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.filter-form .form-group {
+  margin-bottom: 15px;
+}
+
+.filter-form .btn {
+  background: var(--primary);
+  border: none;
+}
+
+.filter-form .btn:hover {
+  background: var(--accent);
+}
+
+.export-btn {
+  background: #28a745 !important;
+  color: white !important;
+}
+
+.export-btn:hover {
+  background: #218838 !important;
+}
+
+.badge {
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.badge-info { background: #17a2b8; }
+.badge-primary { background: #007bff; }
+.badge-warning { background: #ffc107; color: #212529; }
+.badge-success { background: #28a745; }
+.badge-danger { background: #dc3545; }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+  <a href="{% url 'admin:index' %}">
+    <img src="{% static 'img/logo.png' %}" alt="LogisticPro" height="40" style="vertical-align: middle; margin-right: 10px;">
+    LogisticPro Admin
+  </a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
