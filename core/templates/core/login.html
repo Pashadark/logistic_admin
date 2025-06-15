@@ -1,0 +1,35 @@
+{% extends "core/base.html" %}
+
+
+{% block content %}
+<div class="login-container">
+    <div class="card">
+        <div class="card-header">
+            <h2>Вход в систему</h2>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    Неправильное имя пользователя или пароль.
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="username" class="form-label">Имя пользователя</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Войти</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -59,6 +59,11 @@ TEMPLATES = [
     },
 ]
 
+LOGIN_REDIRECT_URL = 'dashboard'  # Редирект после входа
+LOGOUT_REDIRECT_URL = 'login'     # Редирект после выхода
+
+LOGIN_URL = 'login'
+
 WSGI_APPLICATION = 'logistic_admin.wsgi.application'
 
 DATABASES = {

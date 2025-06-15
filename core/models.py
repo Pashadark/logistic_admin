@@ -2,7 +2,17 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.contrib.auth.decorators import login_required
 
+@login_required
+def dashboard(request):
+    # ваша логика представления
+    pass
+
+@login_required
+def profile(request):
+    # ваша логика представления профиля
+    pass
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

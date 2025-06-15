@@ -24,9 +24,11 @@ body {
     min-height: 100vh;
 }
 
+/* ======================== */
 /* Sidebar styles */
+/* ======================== */
 .sidebar {
-    background: var(--primary);
+    background: #1b1e21;
     color: white;
     width: 250px;
     transition: all 0.3s;
@@ -45,11 +47,14 @@ body {
     font-size: 1.5rem;
     font-weight: 600;
     margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.sidebar .logo img {
-    height: 40px;
+.sidebar .logo h2 i {
     margin-right: 10px;
+    color: var(--secondary);
 }
 
 .sidebar .nav-link {
@@ -77,7 +82,9 @@ body {
     font-size: 1.2rem;
 }
 
+/* ======================== */
 /* Main content */
+/* ======================== */
 .main {
     flex: 1;
     display: flex;
@@ -91,7 +98,9 @@ body {
     overflow-y: auto;
 }
 
-/* Header */
+/* ======================== */
+/* Header styles */
+/* ======================== */
 .header {
     background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -109,6 +118,116 @@ body {
     color: var(--primary);
 }
 
+/* Стили для панели уведомлений и сообщений */
+.header-actions {
+    display: flex;
+    gap: 15px;
+    margin-right: 15px;
+}
+
+.header-action-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--dark);
+    transition: all 0.3s ease;
+}
+
+.header-action-btn:hover {
+    background-color: var(--light-gray);
+    color: var(--primary);
+}
+
+.header-notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: var(--danger);
+    color: white;
+    font-size: 0.7rem;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid white;
+}
+
+/* Выпадающие списки */
+.header-dropdown-menu {
+    width: 350px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.header-dropdown-header {
+    padding: 12px 16px;
+    background-color: var(--light);
+    border-radius: 10px 10px 0 0;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.header-dropdown-header h6 {
+    font-weight: 600;
+    margin: 0;
+}
+
+.header-dropdown-item {
+    padding: 12px 16px;
+    transition: all 0.2s;
+    border-bottom: 1px solid var(--light-gray);
+    color: var(--dark);
+    text-decoration: none;
+    display: block;
+}
+
+.header-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.header-dropdown-item:hover {
+    background-color: var(--light);
+}
+
+/* Иконки уведомлений */
+.notification-icon-primary { color: var(--primary); }
+.notification-icon-warning { color: var(--warning); }
+.notification-icon-success { color: var(--success); }
+
+/* Адаптивность хедера */
+@media (max-width: 768px) {
+    .header-actions {
+        gap: 8px;
+    }
+
+    .header-action-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .header-dropdown-menu {
+        width: 280px;
+        right: 0 !important;
+        left: auto !important;
+    }
+
+    .header .page-title h1 {
+        font-size: 1.2rem;
+    }
+}
+
 .user-menu img {
     width: 40px;
     height: 40px;
@@ -116,16 +235,251 @@ body {
     object-fit: cover;
 }
 
-/* Footer */
+/* ======================== */
+/* Footer styles */
+/* ======================== */
 .footer {
-    background: white;
-    padding: 15px 30px;
-    border-top: 1px solid var(--light-gray);
-    text-align: center;
-    color: var(--gray);
+    background: linear-gradient(135deg, #1a2a3a, #0d1b2a);
+    color: white;
+    padding: 3rem 0 1.5rem;
+    position: relative;
+    overflow: hidden;
 }
 
+.footer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--secondary), var(--accent));
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.footer-logo i {
+    font-size: 2rem;
+    color: var(--secondary);
+    margin-right: 10px;
+}
+
+.footer-logo h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(to right, var(--secondary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.footer .description {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.footer h5 {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+    color: white;
+}
+
+.footer h5::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: var(--secondary);
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 0.8rem;
+}
+
+.footer-links a {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+}
+
+.footer-links a:hover {
+    color: white;
+    transform: translateX(5px);
+}
+
+.footer-links a i {
+    margin-right: 8px;
+    width: 20px;
+    text-align: center;
+}
+
+.contact-info {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.contact-info li {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.contact-info i {
+    margin-right: 10px;
+    margin-top: 4px;
+    color: var(--secondary);
+}
+
+.download-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.download-btn {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 8px;
+    padding: 10px 15px;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.download-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px);
+}
+
+.download-btn i {
+    font-size: 1.8rem;
+    margin-right: 10px;
+}
+
+.download-btn .text {
+    display: flex;
+    flex-direction: column;
+}
+
+.download-btn .text span:first-child {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.download-btn .text span:last-child {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.subscribe-form {
+    margin-bottom: 1.5rem;
+}
+
+.subscribe-form .form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+}
+
+.subscribe-form .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.subscribe-form .btn {
+    width: 100%;
+    background: var(--secondary);
+    border: none;
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.social-links {
+    display: flex;
+    gap: 15px;
+    margin-top: 1.5rem;
+}
+
+.social-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+}
+
+.social-links a:hover {
+    background: var(--secondary);
+    transform: translateY(-3px);
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 1.5rem;
+    margin-top: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.copyright {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+}
+
+.footer-menu {
+    display: flex;
+    gap: 20px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-menu a {
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.footer-menu a:hover {
+    color: white;
+}
+
+/* ======================== */
 /* Cards */
+/* ======================== */
 .card {
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
@@ -144,7 +498,9 @@ body {
     align-items: center;
 }
 
+/* ======================== */
 /* Buttons */
+/* ======================== */
 .btn-primary {
     background: var(--primary);
     border: none;
@@ -174,7 +530,9 @@ body {
     color: white;
 }
 
+/* ======================== */
 /* Badges */
+/* ======================== */
 .badge {
     padding: 5px 12px;
     border-radius: 20px;
@@ -188,7 +546,9 @@ body {
 .badge-delivered { background: var(--success); color: white; }
 .badge-problem { background: var(--danger); color: white; }
 
+/* ======================== */
 /* Alerts */
+/* ======================== */
 .alert {
     border-radius: 8px;
     padding: 15px 20px;
@@ -200,7 +560,9 @@ body {
     color: var(--primary);
 }
 
+/* ======================== */
 /* Forms */
+/* ======================== */
 .form-control, .form-select {
     border-radius: 8px;
     padding: 10px 15px;
@@ -212,7 +574,9 @@ body {
     box-shadow: 0 0 0 0.25rem rgba(0, 180, 216, 0.25);
 }
 
+/* ======================== */
 /* Table */
+/* ======================== */
 .table {
     border-collapse: separate;
     border-spacing: 0;
@@ -235,10 +599,77 @@ body {
 .table tbody tr:hover {
     background-color: rgba(0, 180, 216, 0.05);
 }
+/* Хлебные крошки */
+.breadcrumb {
+    background-color: transparent;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+}
 
+.breadcrumb-item {
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-item a {
+    color: var(--primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s;
+}
+/* Стили для страницы 404 */
+.error-icon {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+.breadcrumb-item a:hover {
+    color: var(--accent);
+}
+
+.breadcrumb-item.active {
+    color: var(--gray);
+    font-weight: 500;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+    color: var(--gray);
+    padding: 0 0.5rem;
+    font-size: 1.2rem;
+    line-height: 1;
+}
 .action-btn {
     padding: 5px 10px;
     border-radius: 5px;
     margin-right: 5px;
     font-size: 0.9rem;
+}
+
+/* ======================== */
+/* Адаптивность */
+/* ======================== */
+@media (max-width: 992px) {
+    .footer .row > div {
+        margin-bottom: 2rem;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .footer-menu {
+        justify-content: center;
+    }
 }

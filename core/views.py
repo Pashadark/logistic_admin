@@ -2,7 +2,8 @@ from django.views.generic import TemplateView
 from django.core.paginator import Paginator
 from cargo_admin.models import Shipment
 from django.db.models import Q
-
+from django.shortcuts import render
+from django.http import Http404
 
 class DashboardView(TemplateView):
     template_name = 'core/dashboard.html'
@@ -57,6 +58,13 @@ from django.contrib import messages
 from django.conf import settings
 from .models import Profile
 
+
+def custom_404(request, exception):
+    # Логирование ошибки
+    print(f"404 Error: {request.path} - {exception}")
+
+    # Возвращаем кастомный шаблон
+    return render(request, 'core/errors/404.html', status=404)
 
 @login_required
 def profile_view(request):

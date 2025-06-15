@@ -1,50 +1,85 @@
 <aside class="sidebar">
     <div class="logo">
-        <h2><i class="bi bi-truck"></i> LogisticPro</h2>
+        <div class="d-flex align-items-center justify-content-center py-3">
+            <i class="bi bi-rocket-takeoff fs-3 me-2" style="color: #00b4d8;"></i>
+            <h2 class="m-0" style="
+                background: linear-gradient(to right, #00b4d8, #0077b6);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                font-weight: 700;
+            ">Искра</h2>
+        </div>
     </div>
 
-    <ul class="nav flex-column">
-        <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
-                <i class="bi bi-send"></i>
+    <ul class="nav flex-column mt-3">
+        <!-- Основные пункты меню -->
+        <li class="nav-item mb-1">
+            <a class="nav-link d-flex align-items-center py-3 {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+               href="{% url 'dashboard' %}">
+                <i class="bi bi-send fs-5 me-3"></i>
                 <span>Отправки</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-inbox"></i>
+        <li class="nav-item mb-1">
+            <a class="nav-link d-flex align-items-center py-3" href="#">
+                <i class="bi bi-inbox fs-5 me-3"></i>
                 <span>Получения</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-graph-up"></i>
+        <li class="nav-item mb-1">
+            <a class="nav-link d-flex align-items-center py-3" href="#">
+                <i class="bi bi-graph-up fs-5 me-3"></i>
                 <span>Аналитика</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-people"></i>
+        <li class="nav-item mb-1">
+            <a class="nav-link d-flex align-items-center py-3" href="#">
+                <i class="bi bi-people fs-5 me-3"></i>
                 <span>Клиенты</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
-                <i class="bi bi-universal-access"></i>
+
+        <!-- Разделитель -->
+        <li class="my-3 px-3">
+            <hr class="border-secondary opacity-25">
+        </li>
+
+        <!-- Второй блок меню -->
+        <li class="nav-item mb-1">
+            <a class="nav-link d-flex align-items-center py-3 {% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
+               href="{% url 'profile' %}">
+                <i class="bi bi-person fs-5 me-3"></i>
                 <span>Профиль</span>
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="bi bi-gear"></i>
+        <li class="nav-item mb-1">
+            <a class="nav-link d-flex align-items-center py-3" href="#">
+                <i class="bi bi-gear fs-5 me-3"></i>
                 <span>Настройки</span>
             </a>
         </li>
-        <li class="nav-item mt-4">
-            <a class="nav-link" href="/admin/">
-                <i class="bi bi-shield-lock"></i>
+
+        <!-- Разделитель -->
+        <li class="my-3 px-3">
+            <hr class="border-secondary opacity-25">
+        </li>
+
+        <!-- Админка и выход -->
+        <li class="nav-item mb-1">
+            <a class="nav-link d-flex align-items-center py-3" href="/admin/">
+                <i class="bi bi-shield-lock fs-5 me-3"></i>
                 <span>Админ-панель</span>
             </a>
+        </li>
+        <li class="nav-item">
+            <form id="logout-form" method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <a class="nav-link d-flex align-items-center py-3" href="#"
+                   onclick="document.getElementById('logout-form').submit();">
+                    <i class="bi bi-box-arrow-right fs-5 me-3"></i>
+                    <span>Выход</span>
+                </a>
+            </form>
         </li>
     </ul>
 </aside>

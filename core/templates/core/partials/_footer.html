@@ -1,14 +1,100 @@
+{% load static %}
 <footer class="footer">
-    <div class="container-fluid">
+    <div class="container">
         <div class="row">
-            <div class="col-md-6">
-                &copy; 2025 LogisticPro. Все права защищены. Разработка Pavel Sedov 🚀
+            <!-- Колонка 1: Лого и приложения -->
+            <div class="col-lg-4 mb-4">
+                <div class="footer-logo">
+                    <i class="bi bi-rocket-takeoff"></i>
+                    <h2>Искра</h2>
+                </div>
+                <p class="description">
+                    Современная платформа для управления грузоперевозками.
+                    Оптимизируйте маршруты, сокращайте издержки и повышайте
+                    эффективность логистических операций.
+                </p>
+
+                <div class="download-buttons">
+                    <a href="#" class="download-btn">
+                        <i class="bi bi-google-play"></i>
+                        <div class="text">
+                            <span>Доступно в</span>
+                            <span>Google Play</span>
+                        </div>
+                    </a>
+                    <a href="#" class="download-btn">
+                        <i class="bi bi-microsoft"></i>
+                        <div class="text">
+                            <span>Скачайте в</span>
+                            <span>Microsoft Store</span>
+                        </div>
+                    </a>
+                </div>
             </div>
-            <div class="col-md-6 text-md-end">
-                <span class="me-3">Версия 1.0.0</span>
-                <a href="#" class="text-muted me-3">Помощь</a>
-                <a href="#" class="text-muted">Контакты</a>
+
+            <!-- Колонка 2: Навигация -->
+            <div class="col-lg-2 col-md-4 mb-4">
+                <h5>Навигация</h5>
+                <ul class="footer-links">
+                    <li><a href="#"><i class="bi bi-house-door"></i> Главная</a></li>
+                    <li><a href="#"><i class="bi bi-truck"></i> Отправки</a></li>
+                    <li><a href="#"><i class="bi bi-geo-alt"></i> Маршруты</a></li>
+                    <li><a href="#"><i class="bi bi-people"></i> Клиенты</a></li>
+                    <li><a href="#"><i class="bi bi-bar-chart"></i> Отчеты</a></li>
+                </ul>
             </div>
+
+            <!-- Колонка 3: Контакты -->
+            <div class="col-lg-3 col-md-4 mb-4">
+                <h5>Контакты</h5>
+                <ul class="contact-info">
+                    <li>
+                        <i class="bi bi-geo-alt"></i>
+                        <span>г. Москва, ул. Логистическая, 15, офис 305</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-telephone"></i>
+                        <span>+7 (495) 123-45-67</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-envelope"></i>
+                        <span>support@iskra-logistics.ru</span>
+                    </li>
+                    <li>
+                        <i class="bi bi-clock"></i>
+                        <span>Пн-Пт: 9:00-18:00</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Колонка 4: Подписка -->
+            <div class="col-lg-3 col-md-4 mb-4">
+                <h5>Подписка</h5>
+                <p class="description">Будьте в курсе новостей и обновлений</p>
+                <form class="subscribe-form">
+                    <input type="email" class="form-control" placeholder="Ваш email">
+                    <button type="submit" class="btn">Подписаться</button>
+                </form>
+                <div class="social-links">
+                    <a href="#"><i class="bi bi-telegram"></i></a>
+                    <a href="#"><i class="bi bi-whatsapp"></i></a>
+                    <a href="#"><i class="bi bi-vimeo"></i></a>
+                    <a href="#"><i class="bi bi-youtube"></i></a>
+                    <a href="#"><i class="bi bi-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Нижняя часть -->
+        <div class="footer-bottom">
+            <div class="copyright">
+                &copy; 2025 Искра. Все права защищены.
+            </div>
+            <ul class="footer-menu">
+                <li><a href="#">Политика конфиденциальности</a></li>
+                <li><a href="#">Условия использования</a></li>
+                <li><a href="#">Карта сайта</a></li>
+            </ul>
         </div>
     </div>
 </footer>

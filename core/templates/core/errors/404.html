@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+
+{% block title %}Страница не найдена{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Главная</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Ошибка 404</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5 text-center">
+                    <div class="error-icon mb-4">
+                        <i class="bi bi-exclamation-octagon text-danger" style="font-size: 5rem;"></i>
+                    </div>
+                    <h1 class="display-4 fw-bold text-primary mb-3">404</h1>
+                    <h2 class="mb-4">Страница не найдена</h2>
+                    <p class="lead mb-4">
+                        Извините, запрашиваемая страница не существует или была перемещена.
+                        Пожалуйста, проверьте URL-адрес или воспользуйтесь навигацией ниже.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg px-4">
+                            <i class="bi bi-house-door me-2"></i>На главную
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-outline-primary btn-lg px-4">
+                            <i class="bi bi-arrow-left me-2"></i>Назад
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

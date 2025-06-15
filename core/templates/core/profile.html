@@ -2,7 +2,9 @@
 {% load static %}
 
 {% block page_title %}Мой профиль{% endblock %}
-
+{% block breadcrumbs %}
+    <li class="breadcrumb-item active" aria-current="page">Профиль</li>
+{% endblock %}
 {% block content %}
 <div class="row">
     <!-- Левая колонка - информация профиля -->
