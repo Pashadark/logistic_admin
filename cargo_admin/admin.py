@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.utils.html import format_html
 
 
+
 class ShipmentAdmin(admin.ModelAdmin):
     list_display = (
         'id',

@@ -69,7 +69,7 @@ body {
 
 .sidebar .nav-link.active {
     color: white;
-    background: var(--accent);
+    background: #0d6efd;
 }
 
 .sidebar .nav-link i {

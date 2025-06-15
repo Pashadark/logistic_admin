@@ -1,0 +1,294 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block page_title %}Мой профиль{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Левая колонка - информация профиля -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <!-- Аватар -->
+                <div class="avatar-container mb-3">
+                    {% if user.profile.avatar %}
+                        <img src="{{ user.profile.avatar.url }}"
+                             alt="Аватар"
+                             class="rounded-circle img-fluid"
+                             style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                        <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center">
+                            <i class="bi bi-person-fill" style="font-size: 4rem;"></i>
+                        </div>
+                    {% endif %}
+                    <button class="btn btn-sm btn-light avatar-edit-btn"
+                            data-bs-toggle="modal"
+                            data-bs-target="#avatarModal">
+                        <i class="bi bi-camera-fill"></i>
+                    </button>
+                </div>
+
+                <!-- Основная информация -->
+                <h3 class="mb-1">{{ user.get_full_name|default:user.username }}</h3>
+                <p class="text-muted mb-3">
+                    <i class="bi bi-person-badge me-1"></i>
+                    {{ user.profile.position|default:"Пользователь" }}
+                </p>
+
+                <!-- Статистика -->
+                <div class="d-flex justify-content-center mb-3">
+                    <div class="px-3 text-center">
+                        <p class="mb-0 fw-bold">{{ shipment_count }}</p>
+                        <p class="mb-0 small text-muted">Отправок</p>
+                    </div>
+                    <div class="px-3 text-center">
+                        <p class="mb-0 fw-bold">{{ delivered_count }}</p>
+                        <p class="mb-0 small text-muted">Доставлено</p>
+                    </div>
+                    <div class="px-3 text-center">
+                        <p class="mb-0 fw-bold">{{ user.date_joined|date:"d.m.Y" }}</p>
+                        <p class="mb-0 small text-muted">С нами с</p>
+                    </div>
+                </div>
+
+                <!-- Telegram -->
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                    <i class="bi bi-telegram me-2 text-primary"></i>
+                    {% if user.profile.telegram_id %}
+                        <span class="text-primary">@{{ user.profile.telegram_id }}</span>
+                    {% else %}
+                        <span class="text-muted">Не подключен</span>
+                    {% endif %}
+                </div>
+
+                <!-- Кнопка редактирования -->
+                <div class="d-flex justify-content-center mb-2">
+                    <button class="btn btn-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#profileModal">
+                        <i class="bi bi-pencil-square me-1"></i> Редактировать профиль
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Блок контактов -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Контактная информация</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex align-items-center p-3">
+                        <i class="bi bi-envelope-fill me-3 text-primary"></i>
+                        <p class="mb-0">{{ user.email }}</p>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center p-3">
+                        <i class="bi bi-telephone-fill me-3 text-success"></i>
+                        <p class="mb-0">{{ user.profile.phone|default:"Не указан" }}</p>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center p-3">
+                        <i class="bi bi-geo-alt-fill me-3 text-danger"></i>
+                        <p class="mb-0">{{ user.profile.address|default:"Не указан" }}</p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Правая колонка - активность и настройки -->
+    <div class="col-lg-8">
+        <!-- Последние действия -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Последние действия</h5>
+                <a href="#" class="btn btn-sm btn-outline-primary">Показать все</a>
+            </div>
+            <div class="card-body">
+                {% if recent_actions %}
+                <div class="timeline">
+                    {% for action in recent_actions %}
+                    <div class="timeline-item">
+                        <div class="timeline-badge bg-{{ action.color }}"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ action.title }}</strong>
+                            </div>
+                            <p class="mb-0">{{ action.description }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-info-circle fs-1 text-muted mb-2"></i>
+                    <p class="mb-0">Нет последних действий</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Настройки безопасности -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Безопасность и вход</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Пароль</h6>
+                    <p>Последнее изменение: {{ user.last_login|date:"d.m.Y" }}</p>
+                    <button class="btn btn-outline-secondary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#passwordModal">
+                        Изменить пароль
+                    </button>
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <h6>Двухфакторная аутентификация</h6>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="2faSwitch"
+                               {% if user.profile.two_factor_enabled %}checked{% endif %}>
+                        <label class="form-check-label" for="2faSwitch">
+                            {% if user.profile.two_factor_enabled %}
+                                Включена
+                            {% else %}
+                                Отключена
+                            {% endif %}
+                        </label>
+                    </div>
+                    <p class="small text-muted mt-2">
+                        Для большей безопасности включите двухфакторную аутентификацию
+                    </p>
+                </div>
+
+                <hr>
+
+                <div>
+                    <h6>Активные сессии</h6>
+                    <div class="session-item d-flex align-items-center mb-2">
+                        <i class="bi bi-laptop fs-4 me-3"></i>
+                        <div class="flex-grow-1">
+                            <p class="mb-0">Windows 10 • Chrome (Это устройство)</p>
+                            <small class="text-muted">IP: {{ request.META.REMOTE_ADDR }} • {{ user.last_login|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-box-arrow-right"></i> Выйти
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна (оставить без изменений) -->
+
+<style>
+    .avatar-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .avatar-edit-btn {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .avatar-placeholder {
+        width: 150px;
+        height: 150px;
+        background-color: #f0f2f5;
+        color: #adb5bd;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .timeline-badge {
+        position: absolute;
+        left: -30px;
+        top: 5px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+    }
+
+    .timeline-content {
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 2px solid #dee2e6;
+    }
+
+    .session-item {
+        padding: 10px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик для удаления аватара
+    document.getElementById('removeAvatarBtn')?.addEventListener('click', function() {
+        if (confirm('Вы уверены, что хотите удалить аватар?')) {
+            // Отправить запрос на удаление аватара
+            fetch("{% url 'remove_avatar' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({remove: true})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+        }
+    });
+
+    // Переключение двухфакторной аутентификации
+    const twoFactorSwitch = document.getElementById('2faSwitch');
+    if (twoFactorSwitch) {
+        twoFactorSwitch.addEventListener('change', function() {
+            const enabled = this.checked;
+            fetch("{% url 'toggle_2fa' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({enabled: enabled})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    this.checked = !enabled; // Вернуть предыдущее состояние
+                    alert('Ошибка при изменении настроек: ' + data.message);
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
