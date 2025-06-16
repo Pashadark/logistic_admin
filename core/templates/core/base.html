@@ -32,6 +32,31 @@
 
             <!-- Main Content -->
             <main class="content">
+                <!-- Уведомления -->
+                <div class="container-fluid mt-3 alerts-container">
+                    <div class="row">
+                        <div class="col-12">
+                            {% for message in messages|slice:":3" %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                <div class="d-flex align-items-center">
+                                    {% if message.tags == 'success' %}
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    {% elif message.tags == 'error' %}
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    {% elif message.tags == 'warning' %}
+                                    <i class="bi bi-exclamation-circle-fill me-2"></i>
+                                    {% else %}
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    {% endif %}
+                                    <div>{{ message }}</div>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
                 <div class="container-fluid">
                     <!-- Хлебные крошки -->
                     <nav aria-label="breadcrumb" class="mb-3">
@@ -56,6 +81,89 @@
     <!-- Custom JS -->
     <script src="{% static 'core/js/script.js' %}"></script>
     <script src="{% static 'core/js/dashboard.js' %}"></script>
+
+    <!-- Управление уведомлениями -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Плавное исчезновение уведомлений
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            // Автоматическое закрытие через 5 секунд
+            setTimeout(() => {
+                alert.style.transition = 'opacity 0.5s ease';
+                alert.style.opacity = '0';
+
+                setTimeout(() => {
+                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                    bsAlert.close();
+                }, 500);
+            }, 5000);
+
+            // Ручное закрытие с анимацией
+            alert.addEventListener('closed.bs.alert', function () {
+                alert.style.transition = 'opacity 0.5s ease';
+                alert.style.opacity = '0';
+            });
+        });
+
+        // AJAX обработка уведомлений
+        function handleAjaxNotification(response) {
+            if (response.message) {
+                const alertType = response.message_type || 'success';
+                const alertHtml = `
+                    <div class="alert alert-${alertType} alert-dismissible fade show" role="alert">
+                        <div class="d-flex align-items-center">
+                            ${getAlertIcon(alertType)}
+                            <div>${response.message}</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+
+                const container = document.querySelector('.alerts-container .col-12');
+                if (container) {
+                    // Ограничение до 3 уведомлений
+                    const currentAlerts = container.querySelectorAll('.alert');
+                    if (currentAlerts.length >= 3) {
+                        currentAlerts[0].remove();
+                    }
+
+                    container.insertAdjacentHTML('beforeend', alertHtml);
+                    const newAlert = container.lastElementChild;
+
+                    // Настройка анимации для нового уведомления
+                    setTimeout(() => {
+                        newAlert.style.transition = 'opacity 0.5s ease';
+                        newAlert.style.opacity = '0';
+
+                        setTimeout(() => {
+                            const bsAlert = bootstrap.Alert.getOrCreateInstance(newAlert);
+                            bsAlert.close();
+                        }, 500);
+                    }, 5000);
+                }
+            }
+        }
+
+        function getAlertIcon(type) {
+            const icons = {
+                'success': 'bi-check-circle-fill',
+                'error': 'bi-exclamation-triangle-fill',
+                'warning': 'bi-exclamation-circle-fill',
+                'info': 'bi-info-circle-fill'
+            };
+            return `<i class="bi ${icons[type] || 'bi-info-circle-fill'} me-2"></i>`;
+        }
+
+        // Глобальная функция для показа уведомлений
+        window.showAlert = function(type, message) {
+            handleAjaxNotification({
+                message: message,
+                message_type: type
+            });
+        };
+    });
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>

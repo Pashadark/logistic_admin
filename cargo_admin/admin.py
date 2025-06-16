@@ -26,7 +26,7 @@ class ShipmentAdmin(admin.ModelAdmin):
     # ИСПРАВЛЕННЫЙ АТРИБУТ ACTIONS - ДОЛЖЕН БЫТЬ СПИСКОМ
     actions = ['export_to_csv']
 
-    change_list_template = 'admin/shipment_change_list.html'
+    change_list_template = 'admin/cargo_admin/shipment_change_list.html'
 
     def get_type_display(self, obj):
         return obj.get_type_display()

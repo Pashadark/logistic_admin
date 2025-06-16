@@ -93,9 +93,6 @@ TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -103,5 +100,5 @@ TELEGRAM_BOT_TOKEN = "7833491235:AAEeP3bJWIgWxAjdMhYv6zvTE6dIbe7Ob2U"
 TELEGRAM_LOG_CHAT_ID = -1002580459963
 
 # Добавьте в конец файла
-ADMIN_SITE_HEADER = "LogisticPro Admin"
-ADMIN_SITE_TITLE = "LogisticPro Administration"
+ADMIN_SITE_HEADER = "Искра"
+ADMIN_SITE_TITLE = "Админ панель"

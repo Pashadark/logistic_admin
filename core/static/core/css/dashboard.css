@@ -51,6 +51,39 @@
     align-items: center;
 }
 
+/* Добавим в конец файла */
+.info-item {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.info-label {
+    font-weight: 600;
+    color: var(--primary);
+    display: inline-block;
+    min-width: 120px;
+}
+
+.comment-box {
+    background-color: #f8f9fa;
+    border-left: 3px solid var(--secondary);
+    padding: 0.75rem;
+    border-radius: 0 4px 4px 0;
+    margin-top: 0.5rem;
+}
+
+.img-fluid {
+    max-height: 300px;
+    object-fit: contain;
+}
+
+.badge-created { background-color: #6c757d; color: white; }
+.badge-processing { background-color: #0d6efd; color: white; }
+.badge-transit { background-color: #ffc107; color: #212529; }
+.badge-delivered { background-color: #198754; color: white; }
+.badge-problem { background-color: #dc3545; color: white; }
+
 .search-filter .form-group {
     margin-bottom: 0;
     flex: 1;
@@ -102,3 +135,4 @@
         align-items: stretch;
     }
 }
+

@@ -14,6 +14,15 @@ class Shipment(models.Model):
         ('problem', '⚠️ Проблема'),
     ]
 
+    def get_status_display(self):
+        status_map = {
+            'created': '📝 Создано',
+            'processing': '🔄 В обработке',
+            'transit': '🚚 В пути',
+            'delivered': '✅ Доставлено',
+            'problem': '⚠️ Проблема'
+        }
+        return status_map.get(self.status, self.status)
     OPERATION_TYPES = [
         ('send', 'Отправка'),
         ('receive', 'Получение'),

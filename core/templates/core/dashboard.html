@@ -4,193 +4,231 @@
 {% block page_title %}Управление отправками{% endblock %}
 
 {% block content %}
-<div class="dashboard-stats">
-    <div class="stat-card">
-        <div class="stat-icon bg-primary text-white">
-            <i class="bi bi-box-seam"></i>
+<div class="dashboard-container">
+    <!-- Статистика -->
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary text-white">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_shipments }}</h3>
+                <p>Всего отправок</p>
+            </div>
         </div>
-        <div class="stat-info">
-            <h3>{{ total_shipments }}</h3>
-            <p>Всего отправок</p>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-success text-white">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ delivered_count }}</h3>
+                <p>Доставлено</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-warning text-dark">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ created_count }}</h3>
+                <p>Новых</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-danger text-white">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ problem_count }}</h3>
+                <p>Проблемных</p>
+            </div>
         </div>
     </div>
 
-    <div class="stat-card">
-        <div class="stat-icon bg-success text-white">
-            <i class="bi bi-check-circle"></i>
-        </div>
-        <div class="stat-info">
-            <h3>{{ delivered_count }}</h3>
-            <p>Доставлено</p>
-        </div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-icon bg-warning text-dark">
-            <i class="bi bi-hourglass-split"></i>
-        </div>
-        <div class="stat-info">
-            <h3>{{ created_count }}</h3>
-            <p>Новых</p>
-        </div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-icon bg-danger text-white">
-            <i class="bi bi-exclamation-triangle"></i>
-        </div>
-        <div class="stat-info">
-            <h3>{{ problem_count }}</h3>
-            <p>Проблемных</p>
-        </div>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header">
-        <span>Все отправки</span>
-        <a href="#" class="btn btn-sm btn-primary">
-            <i class="bi bi-plus-lg me-1"></i> Новая отправка
-        </a>
-    </div>
-    <div class="card-body">
-        <div class="search-filter">
-            <form id="shipmentFilterForm" method="get" class="w-100 d-flex flex-wrap">
-                <div class="form-group flex-grow-1 me-2 mb-2">
-                    <input type="text" class="form-control" id="searchInput"
-                           name="search" placeholder="🔍Поиск по накладной, городу, id ..."
-                           value="{{ search_query }}">
-                </div>
-
-                <div class="form-group me-2 mb-2" style="min-width: 180px;">
-                    <select class="form-select" id="statusFilter" name="status">
-                        <option value="">Все статусы</option>
-                        <option value="created" {% if status_filter == 'created' %}selected{% endif %}>📝 Создано</option>
-                        <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>🔄 В обработке</option>
-                        <option value="transit" {% if status_filter == 'transit' %}selected{% endif %}>🚚 В пути</option>
-                        <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>✅ Доставлено</option>
-                        <option value="problem" {% if status_filter == 'problem' %}selected{% endif %}>⚠️ Проблема</option>
-                    </select>
-                </div>
-
-                <div class="form-group me-2 mb-2" style="min-width: 140px;">
-                    <select class="form-select" id="typeFilter" name="type">
-                        <option value="">Все типы</option>
-                        <option value="send" {% if type_filter == 'send' %}selected{% endif %}>Отправка</option>
-                        <option value="receive" {% if type_filter == 'receive' %}selected{% endif %}>Получение</option>
-                    </select>
-                </div>
-
-                <div class="d-flex mb-2">
-                    <button type="submit" class="btn btn-primary me-2">
-                        <i class="bi bi-funnel"></i> Применить
-                    </button>
-                    <button type="button" id="resetFilters" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Сбросить
-                    </button>
-                </div>
-            </form>
+    <!-- Основная карточка с таблицей -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3 d-flex flex-wrap align-items-center justify-content-between">
+            <h5 class="card-title mb-0">Все отправки</h5>
+            <a href="#" class="btn btn-primary btn-lg rounded-pill px-4">
+                <i class="bi bi-plus-lg me-2"></i> Новая отправка
+            </a>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Тип</th>
-                        <th>Накладная</th>
-                        <th>Город</th>
-                        <th>Статус</th>
-                        <th>Дата</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for shipment in shipments %}
-                    <tr>
-                        <td>{{ shipment.id }}</td>
-                        <td>
-                            {% if shipment.type == 'send' %}
-                                <span class="badge bg-primary">Отправка</span>
-                            {% else %}
-                                <span class="badge bg-success">Получение</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ shipment.waybill_number }}</td>
-                        <td>{{ shipment.city }}</td>
-                        <td>
-                            <span class="badge badge-{{ shipment.status }}">
-                                {{ shipment.get_status_display }}
-                            </span>
-                        </td>
-                        <td>{{ shipment.timestamp|date:"d.m.Y H:i" }}</td>
-                        <td>
-                            <a href="/admin/cargo_admin/shipment/{{ shipment.id }}/change/"
-                               class="btn btn-sm btn-outline-primary action-btn"
-                               data-bs-toggle="tooltip" title="Редактировать">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <a href="/admin/cargo_admin/shipment/{{ shipment.id }}/delete/"
-                               class="btn btn-sm btn-outline-danger action-btn"
-                               data-bs-toggle="tooltip" title="Удалить">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                            <a href="#"
-                               class="btn btn-sm btn-outline-info action-btn"
-                               data-bs-toggle="tooltip" title="Детали">
-                                <i class="bi bi-info-circle"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center py-4">
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i> Отправлений не найдено
+        <div class="card-body">
+            <!-- Фильтры -->
+            <div class="card mb-4 border-0 bg-light">
+                <div class="card-body">
+                    <form id="shipmentFilterForm" method="get" class="row g-3 align-items-end">
+                        <div class="col-md-4 col-lg-3">
+                            <label for="searchInput" class="form-label small text-muted">Поиск</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control border-start-0" id="searchInput"
+                                       name="search" placeholder="Накладная, город, ID..."
+                                       value="{{ search_query }}">
                             </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                        </div>
 
-        <!-- Pagination -->
-        {% if shipments.paginator.num_pages > 1 %}
-        <nav>
-            <ul class="pagination justify-content-center">
-                {% if shipments.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1&search={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">&laquo; Первая</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ shipments.previous_page_number }}&search={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">Предыдущая</a>
-                    </li>
-                {% endif %}
+                        <div class="col-md-4 col-lg-3">
+                            <label for="statusFilter" class="form-label small text-muted">Статус</label>
+                            <select class="form-select" id="statusFilter" name="status">
+                                <option value="">Все статусы</option>
+                                <option value="created" {% if status_filter == 'created' %}selected{% endif %}>📝 Создано</option>
+                                <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>🔄 В обработке</option>
+                                <option value="transit" {% if status_filter == 'transit' %}selected{% endif %}>🚚 В пути</option>
+                                <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>✅ Доставлено</option>
+                                <option value="problem" {% if status_filter == 'problem' %}selected{% endif %}>⚠️ Проблема</option>
+                            </select>
+                        </div>
 
-                {% for num in shipments.paginator.page_range %}
-                    {% if shipments.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% else %}
+                        <div class="col-md-4 col-lg-3">
+                            <label for="typeFilter" class="form-label small text-muted">Тип</label>
+                            <select class="form-select" id="typeFilter" name="type">
+                                <option value="">Все типы</option>
+                                <option value="send" {% if type_filter == 'send' %}selected{% endif %}>Отправка</option>
+                                <option value="receive" {% if type_filter == 'receive' %}selected{% endif %}>Получение</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 col-lg-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="bi bi-funnel me-1"></i> Применить
+                            </button>
+                            <button type="button" id="resetFilters" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Таблица -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="80">ID</th>
+                            <th width="120">Тип</th>
+                            <th>Накладная</th>
+                            <th>Город</th>
+                            <th width="140">Статус</th>
+                            <th width="100">Комментарии</th>
+                            <th width="140">Дата</th>
+                            <th width="120" class="text-end">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shipment in shipments %}
+                        <tr>
+                            <td class="fw-semibold">#{{ shipment.id }}</td>
+                            <td>
+                                {% if shipment.type == 'send' %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary py-2 px-3 w-100">Отправка</span>
+                                {% else %}
+                                    <span class="badge bg-success bg-opacity-10 text-success py-2 px-3 w-100">Получение</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-medium">{{ shipment.waybill_number }}</td>
+                            <td>{{ shipment.city }}</td>
+                            <td>
+                                <span class="badge py-2 px-3 w-100 badge-{{ shipment.status }}">
+                                    {{ shipment.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if shipment.comment %}
+                                    <button class="btn btn-action has-comment"
+                                            data-bs-toggle="tooltip"
+                                            title="{{ shipment.comment }}">
+                                        <i class="bi bi-chat-square-text text-success"></i>
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-action"
+                                            data-bs-toggle="tooltip"
+                                            title="Нет комментария">
+                                        <i class="bi bi-chat-square text-muted"></i>
+                                    </button>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted">{{ shipment.timestamp|date:"d.m.Y H:i" }}</td>
+                            <td class="text-end">
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <a href="{% url 'shipment_details' shipment.id %}"
+                                       class="btn btn-action text-primary"
+                                       data-bs-toggle="tooltip" title="Детали">
+                                        <i class="bi bi-info-circle"></i>
+                                    </a>
+                                    <a href="/admin/cargo_admin/shipment/{{ shipment.id }}/change/"
+                                       class="btn btn-action text-info"
+                                       data-bs-toggle="tooltip" title="Редактировать">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="bi bi-box-seam fs-1 text-muted mb-3"></i>
+                                    <h5 class="text-muted">Отправлений не найдено</h5>
+                                    <p class="text-muted small">Попробуйте изменить параметры фильтра</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Пагинация -->
+            {% if shipments.paginator.num_pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if shipments.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}&search={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">{{ num }}</a>
+                            <a class="page-link" href="?page=1&search={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ shipments.previous_page_number }}&search={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
                         </li>
                     {% endif %}
-                {% endfor %}
 
-                {% if shipments.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ shipments.next_page_number }}&search={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">Следующая</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ shipments.paginator.num_pages }}&search={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">Последняя &raquo;</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
+                    {% for num in shipments.paginator.page_range %}
+                        {% if shipments.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > shipments.number|add:'-3' and num < shipments.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}&search={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if shipments.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ shipments.next_page_number }}&search={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ shipments.paginator.num_pages }}&search={{ search_query }}&status={{ status_filter }}&type={{ type_filter }}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}
