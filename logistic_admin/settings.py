@@ -27,6 +27,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
 ]
 
 ROOT_URLCONF = 'logistic_admin.urls'
@@ -93,6 +94,16 @@ TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 
+# Настройки для работы с медиафайлами
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Создаем папку для медиа, если не существует
+if not os.path.exists(MEDIA_ROOT):
+    os.makedirs(MEDIA_ROOT)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'waybills'), exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'products'), exist_ok=True)
+    os.makedirs(os.path.join(MEDIA_ROOT, 'avatars'), exist_ok=True)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -102,3 +113,8 @@ TELEGRAM_LOG_CHAT_ID = -1002580459963
 # Добавьте в конец файла
 ADMIN_SITE_HEADER = "Искра"
 ADMIN_SITE_TITLE = "Админ панель"
+
+print("\nMEDIA DEBUG:")
+print("MEDIA_ROOT:", MEDIA_ROOT)
+print("MEDIA_URL:", MEDIA_URL)
+print("Waybills exists:", os.path.exists(os.path.join(MEDIA_ROOT, 'waybills')))

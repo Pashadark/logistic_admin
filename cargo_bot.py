@@ -7,6 +7,7 @@ import csv
 import io
 import shutil
 import pytz
+import requests
 from datetime import datetime, timedelta, time
 from telegram import (
     Update,
@@ -41,6 +42,13 @@ DB_NAME = "cargo_bot.db"
 BACKUP_DIR = "backups"
 GROUP_ID = -1002580459963
 ADMIN_IDS = [185185047]
+
+# Определяем MEDIA_ROOT
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Создаем подпапки
+os.makedirs(os.path.join(MEDIA_ROOT, 'waybills'), exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'products'), exist_ok=True)
 
 # Состояния диалога
 (
@@ -92,7 +100,9 @@ class Database:
                          city TEXT,
                          status TEXT DEFAULT 'created',
                          comment TEXT,
-                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+                         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                         telegram_waybill_file_id TEXT,
+                         telegram_product_file_id TEXT)''')
 
             # Таблица пользователей
             c.execute('''CREATE TABLE IF NOT EXISTS users
@@ -121,6 +131,12 @@ class Database:
             if 'status' not in columns:
                 c.execute("ALTER TABLE shipments ADD COLUMN status TEXT DEFAULT 'created'")
 
+            # Добавляем столбцы для Telegram file_id
+            if 'telegram_waybill_file_id' not in columns:
+                c.execute("ALTER TABLE shipments ADD COLUMN telegram_waybill_file_id TEXT")
+            if 'telegram_product_file_id' not in columns:
+                c.execute("ALTER TABLE shipments ADD COLUMN telegram_product_file_id TEXT")
+
             # Проверяем существование таблицы users
             c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
             if not c.fetchone():
@@ -146,14 +162,15 @@ class Database:
     def save_shipment(self, data):
         with sqlite3.connect(self.db_name) as conn:
             c = conn.cursor()
-            comment = data[7] if len(data) > 7 else ""
+            # Данные: (id, user_id, type, waybill_photo, product_photo, waybill_number, city, comment, telegram_waybill_file_id, telegram_product_file_id)
             full_data = (
                 data[0], data[1], data[2], data[3],
-                data[4], data[5], data[6], 'created', comment
+                data[4], data[5], data[6], 'created', data[7],
+                data[8], data[9]
             )
             c.execute('''INSERT INTO shipments 
-                         (id, user_id, type, waybill_photo, product_photo, waybill_number, city, status, comment)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''', full_data)
+                         (id, user_id, type, waybill_photo, product_photo, waybill_number, city, status, comment, telegram_waybill_file_id, telegram_product_file_id)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', full_data)
             conn.commit()
 
     def get_shipment_by_id(self, shipment_id):
@@ -453,7 +470,7 @@ def generate_report():
 
     writer.writerow([
         'ID', 'User ID', 'Type', 'Waybill Number', 'City',
-        'Status', 'Comment', 'Timestamp'
+        'Status', 'Comment', 'Timestamp', 'Waybill Photo', 'Product Photo'
     ])
 
     for shipment in shipments:
@@ -465,7 +482,9 @@ def generate_report():
             shipment['city'],
             shipment['status'],
             shipment['comment'],
-            shipment['timestamp']
+            shipment['timestamp'],
+            shipment['waybill_photo'],
+            shipment['product_photo']
         ])
 
     output.seek(0)
@@ -488,11 +507,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     welcome_msg = format_section(
         f"Добро пожаловать, {user.first_name}!",
-        "🚚 <b>LogisticPro Bot</b> - ваш надежный помощник в управлении грузоперевозками\n\n"
-        "▫️ Отслеживайте статусы отправлений в реальном времени\n"
-        "▫️ Получайте уведомления об изменениях\n"
-        "▫️ Управляйте историей перевозок\n\n"
-        "Выберите действие в меню ниже ⬇️"
+        "🚛 <b>ИСКРА | Профессиональная логистическая платформа</b>\n\n"
+        "Ваш универсальный инструмент для управления грузоперевозками:\n\n"
+        "▫️ <b>Веб-панель</b> - полный контроль над отправлениями\n"
+        "▫️ <b>Реальные уведомления</b> - мгновенные оповещения\n"
+        "▫️ <b>История перевозок</b> - доступ ко всем данным\n"
+        "▫️ <b>Документооборот</b> - удобное управление накладными\n\n"
+        "Используйте меню ниже для работы с системой ⬇️"
     )
 
     await update.message.reply_text(
@@ -830,7 +851,16 @@ async def handle_send_waybill(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Обработка фото накладной для отправки"""
     if update.message.photo:
         photo = update.message.photo[-1].file_id
-        context.user_data['waybill_photo'] = photo
+
+        # Скачиваем фото
+        file = await context.bot.get_file(photo)
+        # Генерируем уникальное имя файла
+        filename = f"waybill_{uuid.uuid4()}.jpg"
+        full_path = os.path.join(MEDIA_ROOT, 'waybills', filename)
+        await file.download_to_drive(custom_path=full_path)
+
+        context.user_data['waybill_photo'] = f"waybills/{filename}"
+        context.user_data['telegram_waybill_file_id'] = photo
         context.user_data['conversation_state'] = SEND_PRODUCT
         await update.message.reply_text("📦 Отлично! Теперь сделайте фото товара:")
         return SEND_PRODUCT
@@ -843,7 +873,16 @@ async def handle_send_product(update: Update, context: ContextTypes.DEFAULT_TYPE
     """Обработка фото товара для отправки"""
     if update.message.photo:
         photo = update.message.photo[-1].file_id
-        context.user_data['product_photo'] = photo
+
+        # Скачиваем фото
+        file = await context.bot.get_file(photo)
+        # Генерируем уникальное имя файла
+        filename = f"product_{uuid.uuid4()}.jpg"
+        full_path = os.path.join(MEDIA_ROOT, 'products', filename)
+        await file.download_to_drive(custom_path=full_path)
+
+        context.user_data['product_photo'] = f"products/{filename}"
+        context.user_data['telegram_product_file_id'] = photo
         context.user_data['conversation_state'] = SEND_NUMBER
         await update.message.reply_text("🔢 Введите номер накладной:")
         return SEND_NUMBER
@@ -884,7 +923,16 @@ async def handle_receive_waybill(update: Update, context: ContextTypes.DEFAULT_T
     """Обработка фото накладной для получения"""
     if update.message.photo:
         photo = update.message.photo[-1].file_id
-        context.user_data['waybill_photo'] = photo
+
+        # Скачиваем фото
+        file = await context.bot.get_file(photo)
+        # Генерируем уникальное имя файла
+        filename = f"waybill_{uuid.uuid4()}.jpg"
+        full_path = os.path.join(MEDIA_ROOT, 'waybills', filename)
+        await file.download_to_drive(custom_path=full_path)
+
+        context.user_data['waybill_photo'] = f"waybills/{filename}"
+        context.user_data['telegram_waybill_file_id'] = photo
         context.user_data['conversation_state'] = RECEIVE_PRODUCT
         await update.message.reply_text("📦 Отлично! Теперь сделайте фото товара:")
         return RECEIVE_PRODUCT
@@ -897,7 +945,16 @@ async def handle_receive_product(update: Update, context: ContextTypes.DEFAULT_T
     """Обработка фото товара для получения"""
     if update.message.photo:
         photo = update.message.photo[-1].file_id
-        context.user_data['product_photo'] = photo
+
+        # Скачиваем фото
+        file = await context.bot.get_file(photo)
+        # Генерируем уникальное имя файла
+        filename = f"product_{uuid.uuid4()}.jpg"
+        full_path = os.path.join(MEDIA_ROOT, 'products', filename)
+        await file.download_to_drive(custom_path=full_path)
+
+        context.user_data['product_photo'] = f"products/{filename}"
+        context.user_data['telegram_product_file_id'] = photo
         context.user_data['conversation_state'] = RECEIVE_NUMBER
         await update.message.reply_text("🔢 Введите номер накладной:")
         return RECEIVE_NUMBER
@@ -931,7 +988,7 @@ async def handle_city_selection(update: Update, context: ContextTypes.DEFAULT_TY
         if 'waybill_photo' not in context.user_data or 'product_photo' not in context.user_data:
             await query.edit_message_text("⚠️ Отсутствуют фото! Начните заново.")
             context.user_data.clear()
-            return await start(query, context)
+            return await start(update, context)
 
         operation_type = context.user_data['type']
         city_map = {
@@ -947,11 +1004,13 @@ async def handle_city_selection(update: Update, context: ContextTypes.DEFAULT_TY
             shipment_id,
             query.from_user.id,
             operation_type,
-            context.user_data['waybill_photo'],
-            context.user_data['product_photo'],
+            context.user_data['waybill_photo'],  # путь к файлу
+            context.user_data['product_photo'],  # путь к файлу
             context.user_data['waybill_number'],
             city_name,
-            ""  # Пустой комментарий при создании
+            "",  # Пустой комментарий при создании
+            context.user_data['telegram_waybill_file_id'],  # file_id
+            context.user_data['telegram_product_file_id']  # file_id
         )
 
         db.save_shipment(data)
@@ -974,32 +1033,21 @@ async def handle_city_selection(update: Update, context: ContextTypes.DEFAULT_TY
             "Данные сохранены в системе."
         )
 
-        media_group = [
-            InputMediaPhoto(
-                media=context.user_data['waybill_photo'],
-                caption=message_text,
-                parse_mode='HTML'
-            ),
-            InputMediaPhoto(media=context.user_data['product_photo'])
-        ]
-
-        await context.bot.send_media_group(
+        # Отправляем сообщение с информацией
+        await context.bot.send_message(
             chat_id=query.message.chat_id,
-            media=media_group
+            text=message_text,
+            parse_mode='HTML'
         )
 
         try:
-            await context.bot.send_media_group(
+            await context.bot.send_message(
                 chat_id=GROUP_ID,
-                media=media_group
+                text=message_text,
+                parse_mode='HTML'
             )
         except Exception as group_error:
             logger.error(f"Ошибка при отправке в группу: {group_error}")
-            await context.bot.send_message(
-                chat_id=GROUP_ID,
-                text=f"⚠️ Не удалось отправить фото!\n\n{message_text}",
-                parse_mode='HTML'
-            )
 
         await query.edit_message_reply_markup(reply_markup=None)
 
@@ -1201,28 +1249,12 @@ async def shipment_details(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     message = format_section("ДЕТАЛИ ОТПРАВЛЕНИЯ", shipment_info)
 
-    # Отправляем фото и информацию
-    media_group = [
-        InputMediaPhoto(
-            media=shipment['waybill_photo'],
-            caption=message,
-            parse_mode='HTML'
-        )
-    ]
-
-    if shipment['product_photo']:
-        media_group.append(InputMediaPhoto(media=shipment['product_photo']))
-
-    if update.message:
-        await context.bot.send_media_group(
-            chat_id=update.effective_chat.id,
-            media=media_group
-        )
-    else:
-        await context.bot.send_media_group(
-            chat_id=update.callback_query.message.chat_id,
-            media=media_group
-        )
+    # Отправляем информацию
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=message,
+        parse_mode='HTML'
+    )
 
     # Кнопки действий
     user_id = update.message.from_user.id if update.message else update.callback_query.from_user.id
@@ -1730,50 +1762,7 @@ async def handle_invalid_input(update: Update, context: CallbackContext) -> int:
         context.user_data['conversation_state'] = MAIN_MENU
         return MAIN_MENU
 
-def main():
-    """Основная функция для запуска бота"""
-    try:
-        # Создаем директорию для бэкапов
-        if not os.path.exists(BACKUP_DIR):
-            os.makedirs(BACKUP_DIR)
 
-        # Создаем приложение
-        application = (
-            Application.builder()
-            .token(TOKEN)
-            .concurrent_updates(True)
-            .build()
-        )
-
-        # Настройка JobQueue
-        if application.job_queue:
-            job_queue = application.job_queue
-            moscow_tz = pytz.timezone('Europe/Moscow')
-            backup_time = time(hour=15, minute=0, second=0, tzinfo=moscow_tz)
-            job_queue.run_daily(
-                daily_backup,
-                time=backup_time,
-                days=(0, 1, 2, 3, 4, 5, 6),
-                name="daily_backup"
-            )
-            logger.info("Регулярные бэкапы настроены")
-        else:
-            logger.warning("JobQueue недоступен! Регулярные бэкапы отключены.")
-
-        # Основной обработчик
-        conv_handler = ConversationHandler(
-            # ... (весь ваш существующий код обработчиков)
-        )
-
-        # ... (остальной код инициализации)
-
-        logger.info("Запуск бота...")
-        application.run_polling()
-
-    except Exception as e:
-        logger.error(f"Критическая ошибка: {e}", exc_info=True)
-    finally:
-        logger.info("Бот завершил работу")
 # ===================== ЗАПУСК БОТА =====================
 def main() -> None:
     try:

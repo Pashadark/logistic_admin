@@ -1,20 +1,71 @@
+import io
+import os
+import zipfile
 from django.views.generic import TemplateView
 from django.core.paginator import Paginator
 from cargo_admin.models import Shipment
 from django.db.models import Q
 from django.views import View
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from django.conf import settings
 from .models import Profile, UserActivity
 from django.db import transaction
 from django.contrib.auth import update_session_auth_hash
 from django.utils import timezone
+from django.contrib.auth.forms import UserCreationForm
 
+User = get_user_model()
+
+def register_view(request):
+    if request.user.is_authenticated:
+        messages.warning(request, 'Вы уже авторизованы и будете перенаправлены')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            try:
+                user = form.save()
+                login(request, user)
+                messages.success(request, 'Регистрация прошла успешно! Добро пожаловать!')
+                return redirect('dashboard')
+            except Exception as e:
+                messages.error(request, f'Ошибка при создании пользователя: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'Ошибка в поле "{field}": {error}')
+    else:
+        form = UserCreationForm()
+
+    return render(request, 'registration/register_standalone.html', {'form': form})
+
+def custom_login_view(request):
+    if request.user.is_authenticated:
+        messages.info(request, 'Вы уже авторизованы')
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            try:
+                user = form.get_user()
+                login(request, user)
+                messages.success(request, f'Добро пожаловать, {user.username}!')
+                return redirect('dashboard')
+            except Exception as e:
+                messages.error(request, f'Ошибка входа: {str(e)}')
+        else:
+            messages.error(request, 'Неверные имя пользователя или пароль')
+    else:
+        form = AuthenticationForm()
+
+    return render(request, 'registration/login_standalone.html', {'form': form})
 
 class DashboardView(TemplateView):
     template_name = 'core/dashboard.html'
@@ -49,6 +100,41 @@ class DashboardView(TemplateView):
         })
         return context
 
+def download_shipment_files(request, shipment_id):
+    try:
+        shipment = Shipment.objects.get(id=shipment_id)
+        files_to_zip = []
+
+        # Проверяем и добавляем файлы в архив
+        for file_field in ['waybill_photo', 'product_photo']:
+            file = getattr(shipment, file_field)
+            if file:
+                file_path = os.path.join(settings.MEDIA_ROOT, str(file))
+                if os.path.exists(file_path):
+                    files_to_zip.append((file_path, os.path.basename(file_path)))
+
+        if not files_to_zip:
+            messages.warning(request, 'Нет файлов для скачивания')
+            return redirect('shipment_details', shipment_id=shipment_id)
+
+        # Создаем архив
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for file_path, arcname in files_to_zip:
+                zip_file.write(file_path, arcname)
+
+        zip_buffer.seek(0)
+        response = FileResponse(zip_buffer, as_attachment=True,
+                              filename=f'shipment_{shipment_id}_files.zip')
+        response['Content-Type'] = 'application/zip'
+        return response
+
+    except Shipment.DoesNotExist:
+        messages.error(request, f'Отправка #{shipment_id} не найдена')
+        return redirect('dashboard')
+    except Exception as e:
+        messages.error(request, f'Ошибка при создании архива: {str(e)}')
+        return redirect('shipment_details', shipment_id=shipment_id)
 
 def shipment_details(request, shipment_id):
     shipment = get_object_or_404(Shipment, id=shipment_id)
@@ -73,7 +159,6 @@ def shipment_details(request, shipment_id):
     }
     return render(request, 'core/shipment_details.html', context)
 
-
 class CustomLoginView(View):
     def get(self, request):
         if request.user.is_authenticated:
@@ -86,17 +171,11 @@ class CustomLoginView(View):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            UserActivity.objects.create(
-                user=user,
-                action_type='LOGIN',
-                description='Успешный вход в систему'
-            )
             messages.success(request, f'Добро пожаловать, {user.username}!')
             return redirect('/')
 
         messages.error(request, 'Неверные имя пользователя или пароль')
         return render(request, 'registration/login.html', {'form': form})
-
 
 @login_required
 def profile_view(request):
@@ -109,6 +188,7 @@ def profile_view(request):
             description='Создан новый профиль'
         )
 
+    # Исправляем фильтрацию - используем user_id вместо user
     shipment_count = Shipment.objects.filter(user_id=request.user.id).count()
     delivered_count = Shipment.objects.filter(user_id=request.user.id, status='delivered').count()
 
@@ -120,33 +200,41 @@ def profile_view(request):
         'recent_actions': recent_actions,
         'current_session': 'Сейчас активен'
     })
-
-
 @login_required
 @transaction.atomic
 def update_profile(request):
     if request.method == 'POST':
-        user = request.user
-        profile = Profile.objects.get(user=user)
-
         try:
+            user = request.user
+            profile = Profile.objects.get(user=user)
+
+            # Валидация email
+            new_email = request.POST.get('email', '')
+            if new_email and User.objects.exclude(pk=user.pk).filter(email=new_email).exists():
+                messages.error(request, 'Этот email уже используется другим пользователем')
+                return redirect('profile')
+
             user.first_name = request.POST.get('first_name', '')
             user.last_name = request.POST.get('last_name', '')
-            user.email = request.POST.get('email', '')
+            user.email = new_email
             user.save()
 
             profile.phone = request.POST.get('phone', '')
+            if profile.phone and not profile.phone.isdigit():
+                messages.error(request, 'Номер телефона должен содержать только цифры')
+                return redirect('profile')
+
             profile.position = request.POST.get('position', '')
             profile.address = request.POST.get('address', '')
             profile.telegram_id = request.POST.get('telegram_id', '')
             profile.save()
 
-            UserActivity.objects.create(
+            messages.success(request, 'Профиль успешно обновлен')
+            UserActivity.log_activity(
                 user=user,
                 action_type='PROFILE_UPDATE',
                 description='Обновление профиля'
             )
-            messages.success(request, 'Профиль успешно обновлен')
         except Exception as e:
             messages.error(request, f'Ошибка при обновлении профиля: {str(e)}')
 
@@ -155,26 +243,40 @@ def update_profile(request):
     messages.warning(request, 'Некорректный метод запроса')
     return redirect('profile')
 
-
 @login_required
 def update_avatar(request):
     if request.method == 'POST':
-        profile = Profile.objects.get(user=request.user)
-
         try:
-            if 'avatar' in request.FILES:
-                if profile.avatar:
-                    profile.avatar.delete()
-                profile.avatar = request.FILES['avatar']
-                profile.save()
-                UserActivity.objects.create(
-                    user=request.user,
-                    action_type='AVATAR_CHANGE',
-                    description='Изменение аватара'
-                )
-                messages.success(request, 'Аватар успешно обновлен')
-            else:
-                messages.error(request, 'Не выбран файл для загрузки')
+            profile = Profile.objects.get(user=request.user)
+
+            if 'avatar' not in request.FILES:
+                messages.error(request, 'Файл аватара не выбран')
+                return redirect('profile')
+
+            avatar = request.FILES['avatar']
+
+            # Проверка размера файла (до 2MB)
+            if avatar.size > 2 * 1024 * 1024:
+                messages.error(request, 'Размер файла не должен превышать 2MB')
+                return redirect('profile')
+
+            # Проверка типа файла
+            if not avatar.name.lower().endswith(('.jpg', '.jpeg', '.png')):
+                messages.error(request, 'Поддерживаются только JPG/JPEG/PNG файлы')
+                return redirect('profile')
+
+            if profile.avatar:
+                profile.avatar.delete()
+
+            profile.avatar = avatar
+            profile.save()
+
+            messages.success(request, 'Аватар успешно обновлен')
+            UserActivity.log_activity(
+                user=request.user,
+                action_type='AVATAR_CHANGE',
+                description='Изменение аватара'
+            )
         except Exception as e:
             messages.error(request, f'Ошибка при обновлении аватара: {str(e)}')
 
@@ -182,7 +284,6 @@ def update_avatar(request):
 
     messages.warning(request, 'Некорректный метод запроса')
     return redirect('profile')
-
 
 @login_required
 def remove_avatar(request):
@@ -210,7 +311,6 @@ def remove_avatar(request):
     messages.warning(request, 'Некорректный метод запроса')
     return redirect('profile')
 
-
 @login_required
 def update_password(request):
     if request.method == 'POST':
@@ -221,7 +321,7 @@ def update_password(request):
 
         try:
             if not user.check_password(current_password):
-                messages.error(request, 'Неверный текущий пароль')
+                messages.error(request, 'Текущий пароль введен неверно')
                 return redirect('profile')
 
             if new_password1 != new_password2:
@@ -232,16 +332,20 @@ def update_password(request):
                 messages.error(request, 'Пароль должен содержать минимум 8 символов')
                 return redirect('profile')
 
+            if new_password1 == current_password:
+                messages.warning(request, 'Новый пароль должен отличаться от текущего')
+                return redirect('profile')
+
             user.set_password(new_password1)
             user.save()
             update_session_auth_hash(request, user)
 
-            UserActivity.objects.create(
+            messages.success(request, 'Пароль успешно изменен')
+            UserActivity.log_activity(
                 user=user,
                 action_type='PASSWORD_CHANGE',
                 description='Изменение пароля'
             )
-            messages.success(request, 'Пароль успешно изменен')
         except Exception as e:
             messages.error(request, f'Ошибка при изменении пароля: {str(e)}')
 
@@ -249,7 +353,6 @@ def update_password(request):
 
     messages.warning(request, 'Некорректный метод запроса')
     return redirect('profile')
-
 
 @login_required
 def toggle_2fa(request):
@@ -284,19 +387,41 @@ def toggle_2fa(request):
         'message': 'Invalid request'
     }, status=400)
 
-
 @login_required
 def update_shipment_status(request, shipment_id):
     if request.method == 'POST':
         try:
             shipment = Shipment.objects.get(id=shipment_id)
             new_status = request.POST.get('status')
+
+            if not new_status:
+                messages.error(request, 'Не выбран новый статус')
+                return redirect('dashboard')
+
             old_status = shipment.get_status_display()
+
+            # Проверка допустимости перехода статуса
+            valid_transitions = {
+                'created': ['processing', 'problem'],
+                'processing': ['transit', 'problem'],
+                'transit': ['delivered', 'problem'],
+                'problem': ['processing', 'transit'],
+                'delivered': []
+            }
+
+            if new_status not in valid_transitions.get(shipment.status, []):
+                messages.warning(request,
+                               f'Недопустимый переход статуса: {shipment.status} → {new_status}')
+                return redirect('dashboard')
 
             shipment.status = new_status
             shipment.save()
 
-            UserActivity.objects.create(
+            messages.success(
+                request,
+                f'Статус отправки #{shipment_id} изменен: {old_status} → {shipment.get_status_display()}'
+            )
+            UserActivity.log_activity(
                 user=request.user,
                 action_type='SHIPMENT_STATUS',
                 description=f'Изменение статуса отправки #{shipment_id}',
@@ -305,21 +430,15 @@ def update_shipment_status(request, shipment_id):
                     'new_status': shipment.get_status_display()
                 }
             )
-
-            messages.success(
-                request,
-                f'Статус отправки #{shipment_id} изменен: {old_status} → {shipment.get_status_display()}'
-            )
         except Shipment.DoesNotExist:
             messages.error(request, f'Отправка #{shipment_id} не найдена')
+            return redirect('dashboard')
         except Exception as e:
             messages.error(request, f'Ошибка при обновлении статуса: {str(e)}')
-
-        return redirect('dashboard')
+            return redirect('dashboard')
 
     messages.warning(request, 'Некорректный метод запроса')
     return redirect('dashboard')
-
 
 @login_required
 def create_shipment(request):
@@ -341,7 +460,6 @@ def create_shipment(request):
 
     messages.warning(request, 'Некорректный метод запроса')
     return redirect('dashboard')
-
 
 @login_required
 def delete_shipment(request, shipment_id):
@@ -366,8 +484,7 @@ def delete_shipment(request, shipment_id):
     messages.warning(request, 'Некорректный метод запроса')
     return redirect('dashboard')
 
-
 def custom_404(request, exception):
-    print(f"404 Error: {request.path} - {exception}")
-    messages.warning(request, 'Страница, которую вы ищете, не существует')
+    messages.error(request,
+                 f'Страница {request.path} не найдена. Проверьте URL или перейдите на главную')
     return render(request, 'core/errors/404.html', status=404)

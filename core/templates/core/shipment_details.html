@@ -10,15 +10,15 @@
 {% endblock %}
 
 {% block content %}
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Отправление #{{ shipment.id }}</span>
-        <span class="badge badge-{{ shipment.status }}">{{ shipment.get_status_display }}</span>
-    </div>
+<div class="row">
+    <!-- Карточка с информацией (левая колонка) -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Отправление #{{ shipment.id }}</span>
+            </div>
 
-    <div class="card-body">
-        <div class="row mb-4">
-            <div class="col-md-6">
+            <div class="card-body">
                 <h5 class="mb-3">Основная информация</h5>
                 <div class="info-item">
                     <span class="info-label">Тип:</span>
@@ -27,6 +27,12 @@
                     {% else %}
                         <span class="badge bg-success">Получение</span>
                     {% endif %}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Статус:</span>
+                    <span class="badge badge-{{ shipment.status }}">
+                        {{ shipment.get_status_display }}
+                    </span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Накладная:</span>
@@ -40,16 +46,6 @@
                     <span class="info-label">Дата:</span>
                     <span>{{ shipment.timestamp|date:"d.m.Y H:i" }}</span>
                 </div>
-            </div>
-
-            <div class="col-md-6">
-                <h5 class="mb-3">Статус и комментарии</h5>
-                <div class="info-item">
-                    <span class="info-label">Статус:</span>
-                    <span class="badge badge-{{ shipment.status }}">
-                        {{ shipment.get_status_display }}
-                    </span>
-                </div>
                 <div class="info-item">
                     <span class="info-label">Комментарий:</span>
                     {% if shipment.comment %}
@@ -58,42 +54,104 @@
                         <span class="text-muted">Нет комментария</span>
                     {% endif %}
                 </div>
-            </div>
-        </div>
 
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <h5>Фото накладной</h5>
-                {% if shipment.waybill_photo %}
-                    <img src="{{ shipment.waybill_photo.url }}"
-                         class="img-fluid rounded border"
-                         alt="Накладная">
-                {% else %}
-                    <div class="alert alert-warning">Фото накладной отсутствует</div>
-                {% endif %}
+                <!-- Новый блок с файлами -->
+                <div class="info-item mt-3">
+                    <span class="info-label">Файлы:</span>
+                    <div class="d-flex gap-3 mt-2">
+                        {% if shipment.waybill_photo %}
+                            <a href="/media/{{ shipment.waybill_photo }}"
+                               class="text-decoration-none"
+                               download
+                               title="Скачать накладную">
+                                <i class="bi bi-filetype-jpg fs-3 text-primary"></i>
+                            </a>
+                        {% endif %}
+                        {% if shipment.product_photo %}
+                            <a href="/media/{{ shipment.product_photo }}"
+                               class="text-decoration-none"
+                               download
+                               title="Скачать фото товара">
+                                <i class="bi bi-filetype-jpg fs-3 text-primary"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
 
-            <div class="col-md-6">
-                <h5>Фото товара</h5>
-                {% if shipment.product_photo %}
-                    <img src="{{ shipment.product_photo.url }}"
-                         class="img-fluid rounded border"
-                         alt="Товар">
-                {% else %}
-                    <div class="alert alert-warning">Фото товара отсутствует</div>
-                {% endif %}
+            <div class="card-footer">
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Назад
+                </a>
+                <a href="/admin/cargo_admin/shipment/{{ shipment.id }}/change/"
+                   class="btn btn-primary float-end">
+                    <i class="bi bi-pencil me-1"></i> Редактировать
+                </a>
             </div>
         </div>
     </div>
 
-    <div class="card-footer">
-        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Назад
-        </a>
-        <a href="/admin/cargo_admin/shipment/{{ shipment.id }}/change/"
-           class="btn btn-primary float-end">
-            <i class="bi bi-pencil me-1"></i> Редактировать
-        </a>
+    <!-- Карточка с фотографиями (правая колонка) -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <span>Фотографии</span>
+            </div>
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <h5>Фото накладной</h5>
+                        {% if shipment.waybill_photo %}
+                            {% with photo_path="media/"|add:shipment.waybill_photo %}
+                            <div class="text-center mb-2">
+                                <div class="text-muted small mb-1">
+                                    Файл: {{ shipment.waybill_photo.name }}
+                                </div>
+                                <a href="/{{ photo_path }}"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download"></i> Скачать оригинал
+                                </a>
+                            </div>
+                            <img src="/{{ photo_path }}"
+                                 class="img-fluid rounded border"
+                                 alt="Накладная"
+                                 style="max-height: 200px; object-fit: contain; width: 100%;"
+                                 onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'alert alert-danger\'>Ошибка загрузки изображения'">
+                            {% endwith %}
+                        {% else %}
+                            <div class="alert alert-warning">Фото накладной отсутствует</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <h5>Фото товара</h5>
+                        {% if shipment.product_photo %}
+                            {% with photo_path="media/"|add:shipment.product_photo %}
+                            <div class="text-center mb-2">
+                                <div class="text-muted small mb-1">
+                                    Файл: {{ shipment.product_photo.name }}
+                                </div>
+                                <a href="/{{ photo_path }}"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download"></i> Скачать оригинал
+                                </a>
+                            </div>
+                            <img src="/{{ photo_path }}"
+                                 class="img-fluid rounded border"
+                                 alt="Товар"
+                                 style="max-height: 200px; object-fit: contain; width: 100%;"
+                                 onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'alert alert-danger\'>Ошибка загрузки изображения'">
+                            {% endwith %}
+                        {% else %}
+                            <div class="alert alert-warning">Фото товара отсутствует</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

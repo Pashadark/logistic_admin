@@ -136,3 +136,34 @@
     }
 }
 
+.table-header-clean th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table-header-clean th i {
+    color: #94a3b8;
+    font-size: 0.9em;
+    vertical-align: baseline;
+}
+
+.table-header-clean th:first-child {
+    border-radius: 8px 0 0 0;
+    padding-left: 1.5rem;
+}
+
+.table-header-clean th:last-child {
+    border-radius: 0 8px 0 0;
+    padding-right: 1.5rem;
+}
+

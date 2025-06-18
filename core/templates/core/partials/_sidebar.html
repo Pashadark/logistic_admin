@@ -11,8 +11,8 @@
         </div>
     </div>
 
+    {% if user.is_authenticated %}
     <ul class="nav flex-column mt-3">
-        <!-- Основные пункты меню -->
         <li class="nav-item mb-1">
             <a class="nav-link d-flex align-items-center py-3 {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
                href="{% url 'dashboard' %}">
@@ -39,12 +39,10 @@
             </a>
         </li>
 
-        <!-- Разделитель -->
         <li class="my-3 px-3">
             <hr class="border-secondary opacity-25">
         </li>
 
-        <!-- Второй блок меню -->
         <li class="nav-item mb-1">
             <a class="nav-link d-flex align-items-center py-3 {% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
                href="{% url 'profile' %}">
@@ -59,18 +57,18 @@
             </a>
         </li>
 
-        <!-- Разделитель -->
+        {% if user.is_staff %}
         <li class="my-3 px-3">
             <hr class="border-secondary opacity-25">
         </li>
-
-        <!-- Админка и выход -->
         <li class="nav-item mb-1">
             <a class="nav-link d-flex align-items-center py-3" href="/admin/">
                 <i class="bi bi-shield-lock fs-5 me-3"></i>
                 <span>Админ-панель</span>
             </a>
         </li>
+        {% endif %}
+
         <li class="nav-item">
             <form id="logout-form" method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
@@ -82,4 +80,23 @@
             </form>
         </li>
     </ul>
-    </aside>
+    {% else %}
+    <div class="p-3 text-center">
+        <div class="mb-4">
+            <i class="bi bi-lock-fill fs-1 text-primary"></i>
+        </div>
+        <h6 class="mb-3">Доступ к меню</h6>
+        <p class="small text-muted mb-4">
+            Авторизуйтесь для просмотра всех возможностей системы
+        </p>
+        <div class="d-grid gap-2">
+            <a href="{% url 'login' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Войти
+            </a>
+            <a href="{% url 'register' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-person-plus me-1"></i> Регистрация
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</aside>

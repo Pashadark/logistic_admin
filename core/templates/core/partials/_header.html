@@ -1,23 +1,40 @@
-{% load static %}
 <header class="header bg-white border-bottom">
     <div class="header-container">
-        <!-- Логотип и навигация -->
         <div class="d-flex align-items-center">
+            {% if user.is_authenticated %}
+            <div class="welcome-message me-3">
+                <div class="d-flex align-items-center">
+                    {% if user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}"
+                         class="rounded-circle me-2" width="32" height="32">
+                    {% endif %}
+                    <div>
+                        <div class="fw-medium">
+                            {% if user.first_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% else %}
+                                {{ user.username }}
+                            {% endif %}
+                        </div>
+                        {% if user.profile.position %}
+                        <div class="text-muted small">{{ user.profile.position }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
-        <!-- Панель действий -->
         <div class="d-flex align-items-center">
-            <!-- Уведомления -->
+            {% if user.is_authenticated %}
             <div class="dropdown me-1">
-                <button class="btn-icon dropdown-toggle"
-                        id="notificationsDropdown"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                        title="Уведомления">
+                <button class="btn-icon dropdown-toggle" id="notificationsDropdown"
+                        data-bs-toggle="dropdown" aria-expanded="false" title="Уведомления">
                     <i class="bi bi-bell fs-5"></i>
                     <span class="notification-badge">3</span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-card shadow-sm" aria-labelledby="notificationsDropdown">
+                <ul class="dropdown-menu dropdown-menu-end dropdown-card shadow-sm"
+                    aria-labelledby="notificationsDropdown">
                     <li class="dropdown-header">
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="mb-0 fw-semibold">Уведомления</h6>
@@ -43,141 +60,64 @@
                             </div>
                         </a>
                     </li>
-                    <li>
-                        <a class="dropdown-item p-3" href="#">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0 me-3">
-                                    <div class="icon-circle bg-warning bg-opacity-10 text-warning">
-                                        <i class="bi bi-exclamation-triangle"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <strong class="text-truncate">Задержка доставки</strong>
-                                        <small class="text-muted ms-2">1 час</small>
-                                    </div>
-                                    <div class="text-muted small">Отправка #5678 задерживается</div>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item p-3" href="#">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0 me-3">
-                                    <div class="icon-circle bg-success bg-opacity-10 text-success">
-                                        <i class="bi bi-check-circle"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <strong class="text-truncate">Доставлено</strong>
-                                        <small class="text-muted ms-2">5 часов</small>
-                                    </div>
-                                    <div class="text-muted small">Заказ #9012 успешно доставлен</div>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
                     <li><hr class="dropdown-divider my-1"></li>
                     <li class="text-center py-2">
-                        <a href="#" class="dropdown-item fw-semibold text-primary">Показать все уведомления</a>
+                        <a href="#" class="dropdown-item fw-semibold text-primary">Показать все</a>
                     </li>
                 </ul>
             </div>
+            {% endif %}
 
-            <!-- Сообщения -->
-            <div class="dropdown me-2">
-                <button class="btn-icon dropdown-toggle"
-                        id="messagesDropdown"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                        title="Сообщения">
-                    <i class="bi bi-chat fs-5"></i>
-                    <span class="notification-badge">5</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-card shadow-sm" aria-labelledby="messagesDropdown">
-                    <li class="dropdown-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 fw-semibold">Сообщения</h6>
-                            <small class="text-muted">5 непрочитанных</small>
-                        </div>
-                    </li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    <li>
-                        <a class="dropdown-item p-3" href="#">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0 me-3">
-                                    <img src="{% static 'core/img/user1.jpg' %}" alt="User" class="rounded-circle" width="40" height="40">
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <strong class="text-truncate">Иван Петров</strong>
-                                        <small class="text-muted ms-2">10 мин</small>
-                                    </div>
-                                    <div class="text-muted small text-truncate">Когда будет готова отправка?</div>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item p-3" href="#">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0 me-3">
-                                    <img src="{% static 'core/img/user2.jpg' %}" alt="User" class="rounded-circle" width="40" height="40">
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <strong class="text-truncate">Ольга Сидорова</strong>
-                                        <small class="text-muted ms-2">1 час</small>
-                                    </div>
-                                    <div class="text-muted small text-truncate">Нужно изменить адрес доставки</div>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item p-3" href="#">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0 me-3">
-                                    <img src="{% static 'core/img/user3.jpg' %}" alt="User" class="rounded-circle" width="40" height="40">
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <strong class="text-truncate">Алексей Иванов</strong>
-                                        <small class="text-muted ms-2">3 часа</small>
-                                    </div>
-                                    <div class="text-muted small text-truncate">Подтвердите получение документов</div>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    <li class="text-center py-2">
-                        <a href="#" class="dropdown-item fw-semibold text-primary">Показать все сообщения</a>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Меню пользователя -->
             {% if user.is_authenticated %}
             <div class="dropdown">
-                <button class="user-menu-btn"
-                        id="userDropdown"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                        title="Профиль">
-                    <img src="{% static 'core/img/user-avatar.jpg' %}" alt="User" class="rounded-circle" width="36" height="36">
-                    <span class="user-name d-none d-md-inline fw-medium">{{ user.username }}</span>
-                    <i class="bi bi-chevron-down"></i>
+                <button class="user-menu-btn" id="userDropdown"
+                        data-bs-toggle="dropdown" aria-expanded="false" title="Профиль">
+                    {% if user.profile.avatar %}
+                    <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}"
+                         class="rounded-circle" width="36" height="36">
+                    {% else %}
+                    <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                         style="width: 36px; height: 36px;">
+                        {{ user.username|first|upper }}
+                    </div>
+                    {% endif %}
+                    <span class="user-name d-none d-md-inline fw-medium ms-2">
+                        {% if user.first_name %}
+                            {{ user.first_name }}
+                        {% else %}
+                            {{ user.username }}
+                        {% endif %}
+                    </span>
+                    <i class="bi bi-chevron-down ms-1"></i>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-card shadow-sm" aria-labelledby="userDropdown">
+                <ul class="dropdown-menu dropdown-menu-end dropdown-card shadow-sm"
+                    aria-labelledby="userDropdown">
                     <li class="dropdown-header px-3 py-2">
                         <div class="d-flex align-items-center">
-                            <img src="{% static 'core/img/user-avatar.jpg' %}" alt="User" class="rounded-circle me-3" width="48" height="48">
+                            {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}"
+                                 class="rounded-circle me-3" width="48" height="48">
+                            {% else %}
+                            <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                                 style="width: 48px; height: 48px;">
+                                {{ user.username|first|upper }}
+                            </div>
+                            {% endif %}
                             <div>
-                                <h6 class="mb-0 fw-semibold">{{ user.username }}</h6>
-                                <small class="text-muted">Администратор</small>
+                                <h6 class="mb-0 fw-semibold">
+                                    {% if user.first_name %}
+                                        {{ user.first_name }} {{ user.last_name }}
+                                    {% else %}
+                                        {{ user.username }}
+                                    {% endif %}
+                                </h6>
+                                <small class="text-muted">
+                                    {% if user.profile.position %}
+                                        {{ user.profile.position }}
+                                    {% else %}
+                                        Пользователь
+                                    {% endif %}
+                                </small>
                             </div>
                         </div>
                     </li>
@@ -194,6 +134,14 @@
                             <span>Настройки</span>
                         </a>
                     </li>
+                    {% if user.is_staff %}
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center" href="/admin/">
+                            <i class="bi bi-shield-lock me-3"></i>
+                            <span>Админ-панель</span>
+                        </a>
+                    </li>
+                    {% endif %}
                     <li><hr class="dropdown-divider my-1"></li>
                     <li>
                         <form method="post" action="{% url 'logout' %}">
@@ -207,9 +155,14 @@
                 </ul>
             </div>
             {% else %}
-            <a href="{% url 'login' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 ms-2">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Войти
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Войти
+                </a>
+                <a href="{% url 'register' %}" class="btn btn-sm btn-primary rounded-pill px-3 d-none d-md-inline-block">
+                    Регистрация
+                </a>
+            </div>
             {% endif %}
         </div>
     </div>

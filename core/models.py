@@ -43,6 +43,61 @@ class Profile(models.Model):
         return self.telegram_id if self.telegram_id else None
 
 
+class Shipment(models.Model):
+    STATUS_CHOICES = [
+        ('created', 'Создано'),
+        ('processing', 'В обработке'),
+        ('transit', 'В пути'),
+        ('delivered', 'Доставлено'),
+        ('problem', 'Проблема'),
+    ]
+
+    TYPE_CHOICES = [
+        ('send', 'Отправка'),
+        ('receive', 'Получение'),
+    ]
+
+    id = models.CharField(max_length=20, primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    waybill_photo = models.ImageField(upload_to='waybills/', blank=True, null=True)
+    product_photo = models.ImageField(upload_to='products/', blank=True, null=True)
+    waybill_number = models.CharField(max_length=50)
+    city = models.CharField(max_length=100)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='created')
+    comment = models.TextField(blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    # Новые поля для хранения Telegram file_id
+    telegram_waybill_file_id = models.CharField(max_length=255, blank=True, null=True)
+    telegram_product_file_id = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"Отправление #{self.id}"
+
+    def get_status_display(self):
+        return dict(self.STATUS_CHOICES).get(self.status, self.status)
+
+    def clean(self):
+        super().clean()
+        errors = {}
+
+        # Проверка номера накладной
+        if not self.waybill_number:
+            errors['waybill_number'] = 'Номер накладной обязателен'
+
+        # Проверка города
+        if not self.city:
+            errors['city'] = 'Город обязателен'
+
+        if errors:
+            from django.core.exceptions import ValidationError
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # Вызывает clean() перед сохранением
+        super().save(*args, **kwargs)
+
 class UserActivity(models.Model):
     ACTION_CHOICES = [
         ('LOGIN', 'Вход в систему'),
@@ -81,6 +136,22 @@ class UserActivity(models.Model):
             metadata=metadata or {}
         )
 
+    @property
+    def color(self):
+        color_map = {
+            'LOGIN': 'success',
+            'LOGOUT': 'secondary',
+            'PROFILE_UPDATE': 'primary',
+            'PASSWORD_CHANGE': 'warning',
+            'AVATAR_CHANGE': 'info',
+            'SHIPMENT_CREATE': 'success',
+            'SHIPMENT_UPDATE': 'primary',
+            'SHIPMENT_DELETE': 'danger',
+            'SHIPMENT_STATUS': 'info',
+            'SHIPMENT_VIEW': 'secondary',
+            '2FA_TOGGLE': 'warning'
+        }
+        return color_map.get(self.action_type, 'secondary')
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
