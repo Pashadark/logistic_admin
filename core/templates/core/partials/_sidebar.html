@@ -1,15 +1,12 @@
 <aside class="sidebar">
     <div class="logo">
-        <div class="d-flex align-items-center justify-content-center py-3">
-            <i class="bi bi-rocket-takeoff fs-3 me-2" style="color: #00b4d8;"></i>
-            <h2 class="m-0" style="
-                background: linear-gradient(to right, #00b4d8, #0077b6);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                font-weight: 700;
-            ">Искра</h2>
+    <a href="{% url 'dashboard' %}" class="logo-link nav-link">
+        <div class="d-flex align-items-center py-3 px-3">
+            <i class="bi bi-rocket-takeoff fs-4 me-3"></i>
+            <h2 class="logo-text m-0" style="font-size: 1.5rem;">Искра</h2>
         </div>
-    </div>
+    </a>
+</div>
 
     {% if user.is_authenticated %}
     <ul class="nav flex-column mt-3">

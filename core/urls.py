@@ -5,6 +5,7 @@ from .views import download_shipment_files
 from django.contrib.auth import views as auth_views
 from .views import shipment_details
 from .views import register_view, custom_login_view
+from . import views
 from .views import (
     DashboardView,
     shipment_details,
@@ -26,6 +27,7 @@ urlpatterns = [
     path('', DashboardView.as_view(), name='dashboard'),
     path('shipment/<str:shipment_id>/download/', download_shipment_files, name='download_shipment_files'),
     path('shipment/<str:shipment_id>/', shipment_details, name='shipment_details'),
+    path('shipment/<str:shipment_id>/delete/', views.delete_shipment, name='delete_shipment'),
     path('profile/', profile_view, name='profile'),
     path('profile/update/', update_profile, name='update_profile'),
     path('profile/update-avatar/', update_avatar, name='update_avatar'),
@@ -36,6 +38,7 @@ urlpatterns = [
     path('profile/toggle-2fa/', toggle_2fa, name='toggle_2fa'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('404/', custom_404, name='custom_404'),
+
 ]
 
 if settings.DEBUG:

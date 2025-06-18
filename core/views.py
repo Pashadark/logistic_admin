@@ -18,6 +18,7 @@ from django.db import transaction
 from django.contrib.auth import update_session_auth_hash
 from django.utils import timezone
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
 
 User = get_user_model()
 
@@ -461,28 +462,21 @@ def create_shipment(request):
     messages.warning(request, 'Некорректный метод запроса')
     return redirect('dashboard')
 
+
 @login_required
 def delete_shipment(request, shipment_id):
     if request.method == 'POST':
         try:
             shipment = Shipment.objects.get(id=shipment_id)
             shipment.delete()
-
-            UserActivity.objects.create(
-                user=request.user,
-                action_type='SHIPMENT_DELETE',
-                description=f'Удаление отправки #{shipment_id}'
-            )
             messages.success(request, f'Отправка #{shipment_id} успешно удалена')
+            return redirect('dashboard')
         except Shipment.DoesNotExist:
             messages.error(request, f'Отправка #{shipment_id} не найдена')
-        except Exception as e:
-            messages.error(request, f'Ошибка при удалении отправки: {str(e)}')
-
-        return redirect('dashboard')
+            return redirect('shipment_details', shipment_id=shipment_id)
 
     messages.warning(request, 'Некорректный метод запроса')
-    return redirect('dashboard')
+    return redirect('shipment_details', shipment_id=shipment_id)
 
 def custom_404(request, exception):
     messages.error(request,

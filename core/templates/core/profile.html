@@ -101,42 +101,42 @@
     <!-- Правая колонка - активность и настройки -->
     <div class="col-lg-8">
         <!-- Последние действия -->
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Последние действия</h5>
-        <a href="#" class="btn btn-sm btn-outline-primary">Показать все</a>
-    </div>
-    <div class="card-body">
-        {% if recent_actions %}
-        <div class="timeline">
-            {% for action in recent_actions %}
-            <div class="timeline-item">
-                <div class="timeline-badge bg-{{ action.color }}"></div>
-                <div class="timeline-content">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-muted">{{ action.timestamp|date:"d.m.Y H:i" }}</small>
-                        <span class="badge bg-{{ action.color }}">{{ action.get_action_type_display }}</span>
-                    </div>
-                    <p class="mb-0">{{ action.description }}</p>
-                    {% if action.metadata %}
-                    <small class="text-muted">
-                        {% for key, value in action.metadata.items %}
-                            {{ key }}: {{ value }}{% if not forloop.last %}, {% endif %}
-                        {% endfor %}
-                    </small>
-                    {% endif %}
-                </div>
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Последние действия</h5>
+                <a href="#" class="btn btn-sm btn-outline-primary">Показать все</a>
             </div>
-            {% endfor %}
+            <div class="card-body">
+                {% if recent_actions %}
+                <div class="timeline">
+                    {% for action in recent_actions %}
+                    <div class="timeline-item">
+                        <div class="timeline-badge bg-{{ action.color }}"></div>
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-muted">{{ action.timestamp|date:"d.m.Y H:i" }}</small>
+                                <span class="badge bg-{{ action.color }}">{{ action.get_action_type_display }}</span>
+                            </div>
+                            <p class="mb-0">{{ action.description }}</p>
+                            {% if action.metadata %}
+                            <small class="text-muted">
+                                {% for key, value in action.metadata.items %}
+                                    {{ key }}: {{ value }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="bi bi-info-circle fs-1 text-muted mb-2"></i>
+                    <p class="mb-0">Нет последних действий</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
-        {% else %}
-        <div class="text-center py-3">
-            <i class="bi bi-info-circle fs-1 text-muted mb-2"></i>
-            <p class="mb-0">Нет последних действий</p>
-        </div>
-        {% endif %}
-    </div>
-</div>
 
         <!-- Настройки безопасности -->
         <div class="card">
@@ -194,7 +194,121 @@
     </div>
 </div>
 
-<!-- Модальные окна (оставить без изменений) -->
+<!-- Модальное окно для редактирования профиля -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'update_profile' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактировать профиль</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Имя</label>
+                        <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Фамилия</label>
+                        <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" value="{{ user.email }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <input type="tel" class="form-control" name="phone" value="{{ user.profile.phone|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Должность</label>
+                        <input type="text" class="form-control" name="position" value="{{ user.profile.position|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Адрес</label>
+                        <textarea class="form-control" name="address">{{ user.profile.address|default:'' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telegram ID</label>
+                        <input type="text" class="form-control" name="telegram_id" value="{{ user.profile.telegram_id|default:'' }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для смены аватара -->
+<div class="modal fade" id="avatarModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'update_avatar' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Сменить аватар</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Выберите изображение</label>
+                        <input class="form-control" type="file" name="avatar" accept="image/jpeg, image/png" required>
+                        <div class="form-text">Поддерживаются JPG/PNG файлы до 2MB</div>
+                    </div>
+                    {% if user.profile.avatar %}
+                    <div class="mt-3">
+                        <button type="button" id="removeAvatarBtn" class="btn btn-danger btn-sm">
+                            <i class="bi bi-trash"></i> Удалить аватар
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для смены пароля -->
+<div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'update_password' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Сменить пароль</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Текущий пароль</label>
+                        <input type="password" class="form-control" name="current_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Новый пароль</label>
+                        <input type="password" class="form-control" name="new_password1" required>
+                        <div class="form-text">Минимум 8 символов</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Повторите новый пароль</label>
+                        <input type="password" class="form-control" name="new_password2" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Изменить пароль</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <style>
     .avatar-container {
@@ -259,7 +373,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Обработчик для удаления аватара
     document.getElementById('removeAvatarBtn')?.addEventListener('click', function() {
         if (confirm('Вы уверены, что хотите удалить аватар?')) {
-            // Отправить запрос на удаление аватара
             fetch("{% url 'remove_avatar' %}", {
                 method: 'POST',
                 headers: {
@@ -272,6 +385,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     location.reload();
+                } else {
+                    alert(data.message || 'Ошибка при удалении аватара');
                 }
             });
         }
@@ -292,13 +407,40 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                if (!data.success) {
-                    this.checked = !enabled; // Вернуть предыдущее состояние
-                    alert('Ошибка при изменении настроек: ' + data.message);
+                if (data.success) {
+                    location.reload();
+                } else {
+                    this.checked = !enabled;
+                    alert(data.message || 'Ошибка при изменении настроек');
                 }
             });
         });
     }
+
+    // Валидация форм перед отправкой
+    document.querySelector('#profileModal form')?.addEventListener('submit', function(e) {
+        const phone = this.querySelector('input[name="phone"]');
+        if (phone.value && !/^\d+$/.test(phone.value)) {
+            e.preventDefault();
+            alert('Номер телефона должен содержать только цифры');
+            phone.focus();
+        }
+    });
+
+    document.querySelector('#passwordModal form')?.addEventListener('submit', function(e) {
+        const p1 = this.querySelector('input[name="new_password1"]');
+        const p2 = this.querySelector('input[name="new_password2"]');
+
+        if (p1.value.length < 8) {
+            e.preventDefault();
+            alert('Пароль должен содержать минимум 8 символов');
+            p1.focus();
+        } else if (p1.value !== p2.value) {
+            e.preventDefault();
+            alert('Пароли не совпадают');
+            p2.focus();
+        }
+    });
 });
 </script>
 {% endblock %}

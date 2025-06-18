@@ -13,10 +13,13 @@
 }
 
 body {
-    background-color: #f0f2f5;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    height: 100vh;
-    overflow-x: hidden;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-weight: 400; /* Обычное начертание по умолчанию */
+    line-height: 1.5;
+    color: #212529;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 /* Dashboard specific styles */
@@ -232,12 +235,7 @@ body {
 
 .table th {
     font-weight: 500;
-    text-transform: uppercase;
-    font-size: 0.75rem;
     letter-spacing: 0.5px;
-    color: #6c757d;
-    padding: 12px 16px;
-    background-color: #f8f9fa;
 }
 
 .table td {
@@ -253,24 +251,29 @@ body {
 }
 
 .badge-created {
-    background-color: rgba(108, 117, 125, 0.1);
-    color: #6c757d;
+    background-color: rgba(108, 117, 125, 0.1) !important;
+    color: #1b1e21 !important;  /* Изменено на #1b1e21 */
+    border: none !important;
 }
 .badge-processing {
-    background-color: rgba(13, 110, 253, 0.1);
-    color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1) !important;
+    color: #1b1e21 !important;  /* Изменено на #1b1e21 */
+    border: none !important;
 }
 .badge-transit {
-    background-color: rgba(255, 193, 7, 0.1);
-    color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.1) !important;
+    color: #1b1e21 !important;  /* Изменено на #1b1e21 */
+    border: none !important;
 }
 .badge-delivered {
-    background-color: rgba(25, 135, 84, 0.1);
-    color: #198754;
+    background-color: rgba(25, 135, 84, 0.1) !important;
+    color: #1b1e21 !important;  /* Изменено на #1b1e21 */
+    border: none !important;
 }
 .badge-problem {
-    background-color: rgba(220, 53, 69, 0.1);
-    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1) !important;
+    color: #1b1e21 !important;  /* Изменено на #1b1e21 */
+    border: none !important;
 }
 
 /* Стили для кнопок действий */
@@ -1101,8 +1104,8 @@ body {
 }
 
 .table {
-    border-collapse: separate;
-    border-spacing: 0;
+    font-size: 0.875rem; /* Немного уменьшаем размер */
+    font-weight: 400;
 }
 
 .table thead th {
@@ -1539,3 +1542,322 @@ body {
 .swal2-toast.swal2-icon-info {
     border-left: 4px solid #17a2b8 !important;
 }
+
+/* Стили для кнопки удаления */
+.btn-delete {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-delete:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btn-delete:active {
+    transform: translateY(0);
+}
+
+/* Анимация для кнопки удаления */
+.btn-delete::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+.btn-delete:focus:not(:active)::after {
+    animation: ripple 0.6s ease-out;
+}
+
+/* Стили для миниатюр файлов */
+.file-thumbnails {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.file-thumbnail {
+    width: 100px;
+    text-align: center;
+}
+
+.file-link {
+    display: block;
+    text-decoration: none;
+    color: var(--dark);
+    transition: all 0.3s ease;
+}
+
+.file-link:hover {
+    transform: translateY(-3px);
+}
+
+.file-icon {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 5px;
+}
+
+.file-name {
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Кастомизация SweetAlert */
+.swal2-popup {
+    border-radius: 12px !important;
+    font-family: inherit !important;
+}
+
+.swal2-title {
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(20, 20);
+        opacity: 0;
+    }
+}
+/* Стили для миниатюр файлов */
+.file-thumbnails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.file-thumbnail {
+    width: 100px;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.file-thumbnail:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.file-link {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+}
+
+.file-icon {
+    margin-bottom: 5px;
+}
+
+.file-name {
+    font-size: 0.75rem;
+    word-break: break-word;
+}
+
+/* Стили для статусов */
+.badge.bg-processing {
+    background-color: #fff3cd !important;
+    color: #664d03 !important;
+    border: 1px solid #ffecb5 !important;
+}
+.thumbnail-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .thumbnail-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+        height: 180px;
+        background-color: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .thumbnail-img {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+        transition: transform 0.3s ease;
+    }
+
+    .thumbnail-wrapper:hover .thumbnail-img {
+        transform: scale(1.05);
+    }
+
+    .thumbnail-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 8px;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .thumbnail-wrapper:hover .thumbnail-overlay {
+        opacity: 1;
+    }
+
+    .thumbnail-link {
+        color: white;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .thumbnail-caption {
+        margin-top: 8px;
+    }
+/* Добавьте в ваш CSS */
+.badge-type-primary {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+    color: #0d6efd !important;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+.badge-type-success {
+    background-color: rgba(25, 135, 84, 0.1) !important;
+    color: #198754 !important;
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+/* Заголовки */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500; /* Среднее начертание для заголовков */
+    line-height: 1.2;
+}
+
+/* Полужирный текст */
+strong, b {
+    font-weight: 500;
+}
+
+/* Легкий текст для второстепенной информации */
+.light-text {
+    font-weight: 300;
+}
+
+/* Жирные кнопки и важные элементы */
+.btn, .card-header, .badge {
+    font-weight: 500;
+}
+/* Для очень мелкого текста (12-13px) добавьте */
+.small-text {
+  font-size: 0.8125rem;
+  font-weight: 300;
+  letter-spacing: 0.2px;
+}
+
+/* Для форм можно сделать более плотный текст */
+.form-control, .form-select {
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+/* Специальный стиль для цифр в статистике */
+.stat-number {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.logo-link {
+    text-decoration: none;
+    display: block;
+}
+
+.logo-container {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem; /* Немного увеличил горизонтальные отступы */
+}
+
+.logo-icon {
+    width: 48px;  /* Размер под большую иконку */
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.logo-icon .bi-rocket-takeoff {
+    font-size: 2rem; /* fs-1 (2rem) */
+    line-height: 1;
+}
+
+.logo-text {
+    color: white;
+    font-weight: 700;
+    font-size: 1.35rem; /* Чуть меньше чем иконка (было 1.5rem) */
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    margin-left: 0.5rem; /* Дополнительный отступ от иконки */
+    line-height: 1.2;
+}
+
+/* Эффекты при наведении */
+.logo-link:hover .logo-container {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.logo-link:hover .logo-icon {
+    transform: translateY(-2px);
+    color: #00b4d8;
+}
+
+/* Анимация */
+@keyframes subtleRocket {
+    0% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-4px) rotate(8deg); } /* Усилил анимацию */
+    100% { transform: translateY(0) rotate(0); }
+}
+
+.logo-link:hover .bi-rocket-takeoff {
+    animation: subtleRocket 0.8s ease;
+}
+
+/* Минимальная анимация для иконки */
+@keyframes subtleRocket {
+    0% {
+        transform: translateY(0) rotate(0);
+    }
+    50% {
+        transform: translateY(-3px) rotate(5deg);
+    }
+    100% {
+        transform: translateY(0) rotate(0);
+    }
+}
+
+.logo-link:hover .bi-rocket-takeoff {
+    animation: subtleRocket 0.8s ease;
+}
+

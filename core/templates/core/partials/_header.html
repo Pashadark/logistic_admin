@@ -3,24 +3,7 @@
         <div class="d-flex align-items-center">
             {% if user.is_authenticated %}
             <div class="welcome-message me-3">
-                <div class="d-flex align-items-center">
-                    {% if user.profile.avatar %}
-                    <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}"
-                         class="rounded-circle me-2" width="32" height="32">
-                    {% endif %}
-                    <div>
-                        <div class="fw-medium">
-                            {% if user.first_name %}
-                                {{ user.first_name }} {{ user.last_name }}
-                            {% else %}
-                                {{ user.username }}
-                            {% endif %}
-                        </div>
-                        {% if user.profile.position %}
-                        <div class="text-muted small">{{ user.profile.position }}</div>
-                        {% endif %}
-                    </div>
-                </div>
+
             </div>
             {% endif %}
         </div>
