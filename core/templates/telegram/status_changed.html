@@ -1,0 +1,16 @@
+{% extends "telegram/base_notification.html" %}
+
+{% block content %}
+🔄 <b>Изменение статуса поставки</b>
+
+▪️ <b>ID:</b> <code>{{ shipment.id }}</code>
+▪️ <b>Накладная:</b> {{ shipment.waybill_number }}
+▪️ <b>Старый статус:</b> {{ old_status }}
+▪️ <b>Новый статус:</b> {{ new_status }}
+
+{% if shipment.comment %}
+📝 <b>Комментарий:</b> {{ shipment.comment }}
+{% endif %}
+{% endblock %}
+
+{% set footer = "Изменить: /edit_{{ shipment.id }}" %}

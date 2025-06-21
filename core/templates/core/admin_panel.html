@@ -1,0 +1,701 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Панель администратора{% endblock %}
+
+{% block breadcrumbs %}
+    <li class="breadcrumb-item active" aria-current="page">Админ панель</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Панель администратора</h1>
+
+            <!-- Навигационные табы -->
+            <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">Пользователи</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="bot-tab" data-bs-toggle="tab" data-bs-target="#bot" type="button" role="tab">Управление ботом</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="database-tab" data-bs-toggle="tab" data-bs-target="#database" type="button" role="tab">База данных</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="django-admin-tab" data-bs-toggle="tab" data-bs-target="#django-admin" type="button" role="tab">Django Admin</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab">
+                         Логи
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Содержимое табов -->
+            <div class="tab-content" id="adminTabsContent">
+                <!-- Таб пользователей -->
+                <div class="tab-pane fade show active" id="users" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Управление пользователями</h5>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                                <i class="bi bi-plus-lg"></i> Добавить пользователя
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Аватар</th>
+                                            <th>Имя пользователя</th>
+                                            <th>Email</th>
+                                            <th>Telegram</th>
+                                            <th>Статус</th>
+                                            <th>Группа</th>
+                                            <th>Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in users %}
+                                        <tr>
+                                            <td>{{ user.id }}</td>
+                                            <td>
+                                                {% if user.profile.avatar %}
+                                                    <img src="{{ user.profile.avatar.url }}" class="rounded-circle" width="40" height="40" alt="Аватар">
+                                                {% else %}
+                                                    <div class="avatar-placeholder rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="bi bi-person text-muted"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ user.username }}</td>
+                                            <td>{{ user.email|default:"-" }}</td>
+                                            <td>
+                                                {% if user.profile.telegram_id %}
+                                                    <span class="badge bg-primary">@{{ user.profile.telegram_id }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Не подключен</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if user.is_active %}
+                                                    <span class="badge bg-success">Активен</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Заблокирован</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if user.groups.all %}
+                                                    {% for group in user.groups.all %}
+                                                        <span class="badge bg-info">{{ group.name }}</span>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <span class="badge bg-warning">Нет группы</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUserModal{{ user.id }}">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-danger" onclick="confirmDeleteUser({{ user.id }}, '{{ user.username }}')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Таб управления ботом -->
+                <div class="tab-pane fade" id="bot" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Управление ботом</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Текст сообщения</label>
+                                        <textarea class="form-control" id="botMessageText" rows="3">Веб-версия и Telegram бот теперь связаны!</textarea>
+                                    </div>
+
+                                    <div class="d-flex gap-2 mb-3">
+                                        <button id="testBotBtn" class="btn btn-primary">
+                                            <i class="bi bi-robot"></i> Отправить тестовое сообщение
+                                        </button>
+                                        <button id="sendToGroupBtn" class="btn btn-success">
+                                            <i class="bi bi-megaphone"></i> Отправить в группу
+                                        </button>
+                                    </div>
+                                    <div id="botTestResult" class="mt-3"></div>
+                                </div>
+                            </div>
+
+                            <div class="card shadow-sm">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Доступ к боту</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>Управление доступом пользователей к боту:</p>
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="botGlobalAccess" checked>
+                                        <label class="form-check-label" for="botGlobalAccess">Доступ для всех пользователей</label>
+                                    </div>
+
+                                    <div id="restrictedAccessSection" style="display: none;">
+                                        <h6>Выберите пользователей с доступом:</h6>
+                                        <div class="list-group">
+                                            {% for user in users %}
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <input class="form-check-input me-2" type="checkbox" id="userAccess{{ user.id }}" checked>
+                                                    <label class="form-check-label" for="userAccess{{ user.id }}">
+                                                        {{ user.username }}
+                                                    </label>
+                                                </div>
+                                                <span class="badge bg-primary rounded-pill">@{{ user.profile.telegram_id|default:"-" }}</span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card shadow-sm">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Статистика бота</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <div class="card bg-primary text-white">
+                                                <div class="card-body text-center">
+                                                    <h3 class="mb-0">{{ bot_stats.active_users }}</h3>
+                                                    <small>Активных пользователей</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="card bg-success text-white">
+                                                <div class="card-body text-center">
+                                                    <h3 class="mb-0">{{ bot_stats.messages_today }}</h3>
+                                                    <small>Сообщений сегодня</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="card bg-info text-white">
+                                                <div class="card-body text-center">
+                                                    <h3 class="mb-0">{{ bot_stats.total_messages }}</h3>
+                                                    <small>Всего сообщений</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <div class="card bg-warning text-dark">
+                                                <div class="card-body text-center">
+                                                    <h3 class="mb-0">{{ bot_stats.last_activity|date:"d.m.Y H:i" }}</h3>
+                                                    <small>Последняя активность</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                                <!-- Таб управления базой данных -->
+                <div class="tab-pane fade" id="database" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card shadow-sm mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Резервное копирование</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Интервал автоматического бэкапа</label>
+                                        <select class="form-select" id="backupInterval">
+                                            <option value="0">Отключено</option>
+                                            <option value="1">Ежедневно</option>
+                                            <option value="7" selected>Еженедельно</option>
+                                            <option value="30">Ежемесячно</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Последний бэкап</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" value="{{ last_backup|default:'Не создавался' }}" readonly id="lastBackupInfo">
+                                            <button class="btn btn-outline-secondary" type="button" id="refreshBackupInfo">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <button id="createBackupBtn" class="btn btn-primary me-2">
+                                        <i class="bi bi-database"></i> Создать бэкап сейчас
+                                    </button>
+                                    <button id="downloadBackupBtn" class="btn btn-outline-primary" {% if not last_backup %}disabled{% endif %}>
+                                        <i class="bi bi-download"></i> Скачать последний бэкап
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card shadow-sm">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Операции с базой</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Будьте осторожны с этими операциями!
+                                    </div>
+
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#clearDatabaseModal">
+                                            <i class="bi bi-trash"></i> Очистить базу данных
+                                        </button>
+                                        <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#restoreDatabaseModal">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Восстановить из бэкапа
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Таб Django Admin -->
+                <div class="tab-pane fade" id="django-admin" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0">Стандартная админка Django</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <i class="bi bi-shield-lock fs-1 text-primary mb-3"></i>
+                            <h4 class="mb-3">Доступ к стандартной админке Django</h4>
+                            <p class="text-muted mb-4">
+                                Для управления всеми моделями и настройками системы
+                            </p>
+                            <a href="/admin/" class="btn btn-primary px-4" target="_blank">
+                                <i class="bi bi-box-arrow-up-right me-2"></i>Перейти в Django Admin
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Таб логов -->
+                <div class="tab-pane fade" id="logs" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-journal-text"></i> Последние действия</h5>
+                            <button id="refreshLogsBtn" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise"></i> Обновить
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="activityLogsTable">
+                                    <thead>
+                                        <tr>
+                                            <th width="150">Дата/Время</th>
+                                            <th>Пользователь</th>
+                                            <th>Действие</th>
+                                            <th>Описание</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="logsTableBody">
+                                        <tr>
+                                            <td colspan="4" class="text-center">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Загрузка...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна -->
+<!-- Модальное окно создания пользователя -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="createUserForm" method="post" action="{% url 'admin_create_user' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Создать нового пользователя</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Имя пользователя</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Пароль</label>
+                        <input type="password" class="form-control" name="password1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Подтверждение пароля</label>
+                        <input type="password" class="form-control" name="password2" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Группа</label>
+                        <select class="form-select" name="group">
+                            <option value="">Без группы</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}">{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="createUserActive" checked>
+                        <label class="form-check-label" for="createUserActive">Активный пользователь</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно очистки базы данных -->
+<div class="modal fade" id="clearDatabaseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Очистка базы данных</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Это действие нельзя отменить!
+                </div>
+                <p>Вы уверены, что хотите полностью очистить базу данных? Это удалит все данные, кроме пользователей.</p>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmClearDatabase">
+                    <label class="form-check-label" for="confirmClearDatabase">Я понимаю последствия этого действия</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="clearDatabaseBtn" disabled>Очистить базу</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно восстановления из бэкапа -->
+<div class="modal fade" id="restoreDatabaseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">Восстановление базы данных</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Текущие данные будут заменены!
+                </div>
+                <p>Выберите файл бэкапа для восстановления:</p>
+                <input type="file" class="form-control" id="backupFile" accept=".json,.sql,.zip">
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" id="confirmRestoreDatabase">
+                    <label class="form-check-label" for="confirmRestoreDatabase">Я понимаю последствия этого действия</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-warning" id="restoreDatabaseBtn" disabled>Восстановить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна редактирования пользователей -->
+{% for user in users %}
+<div class="modal fade" id="editUserModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form class="edit-user-form" method="post" action="{% url 'admin_edit_user' user.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактирование пользователя</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Имя пользователя</label>
+                        <input type="text" class="form-control" name="username" value="{{ user.username }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" value="{{ user.email|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telegram ID</label>
+                        <input type="text" class="form-control" name="telegram_id" value="{{ user.profile.telegram_id|default:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Группа</label>
+                        <select class="form-select" name="group">
+                            <option value="">Без группы</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}" {% if group in user.groups.all %}selected{% endif %}>{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="editUserActive{{ user.id }}" {% if user.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="editUserActive{{ user.id }}">Активный пользователь</label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_staff" id="editUserStaff{{ user.id }}" {% if user.is_staff %}checked{% endif %}>
+                        <label class="form-check-label" for="editUserStaff{{ user.id }}">Доступ к админке</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Подключение CSS -->
+<link rel="stylesheet" href="{% static 'core/css/admin_panel.css' %}">
+
+<!-- Подключение JS -->
+<script src="{% static 'core/js/admin_panel.js' %}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обработчики для кнопок управления ботом
+        const testBotBtn = document.getElementById('testBotBtn');
+        const sendToGroupBtn = document.getElementById('sendToGroupBtn');
+        const botMessageText = document.getElementById('botMessageText');
+        const botTestResult = document.getElementById('botTestResult');
+
+        // Функция отправки сообщения
+        function sendBotMessage(isGroup) {
+            const message = botMessageText.value;
+            if (!message) {
+                botTestResult.innerHTML = '<div class="alert alert-danger">Введите текст сообщения</div>';
+                return;
+            }
+
+            botTestResult.innerHTML = '<div class="alert alert-info">Отправка сообщения...</div>';
+
+            fetch('/system/test-bot/', {  // ИСПРАВЛЕННЫЙ URL
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: JSON.stringify({
+                    message: message,
+                    is_group_message: isGroup
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    botTestResult.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                } else {
+                    botTestResult.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                botTestResult.innerHTML = `<div class="alert alert-danger">Ошибка: ${error.message}</div>`;
+            });
+        }
+
+        // Назначаем обработчики
+        if (testBotBtn && sendToGroupBtn) {
+            testBotBtn.addEventListener('click', () => sendBotMessage(false));
+            sendToGroupBtn.addEventListener('click', () => sendBotMessage(true));
+        }
+
+        // Обработчик создания бэкапа
+        const createBackupBtn = document.getElementById('createBackupBtn');
+        if (createBackupBtn) {
+            createBackupBtn.addEventListener('click', function() {
+                const originalText = this.innerHTML;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Создание...';
+                this.disabled = true;
+
+                fetch('/system/create-backup/', {  // ИСПРАВЛЕННЫЙ URL
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken(),
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Бэкап успешно создан!');
+                        document.getElementById('downloadBackupBtn').disabled = false;
+                        document.getElementById('lastBackupInfo').value = data.backup_filename;
+                    } else {
+                        alert('Ошибка: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Ошибка: ' + error);
+                })
+                .finally(() => {
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                });
+            });
+        }
+
+        // Обработчик скачивания бэкапа
+        const downloadBackupBtn = document.getElementById('downloadBackupBtn');
+        if (downloadBackupBtn) {
+            downloadBackupBtn.addEventListener('click', function() {
+                window.location.href = '/system/download-backup/';  // ИСПРАВЛЕННЫЙ URL
+            });
+        }
+
+        // Функция для получения CSRF токена
+        function getCSRFToken() {
+            const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+            return csrfInput ? csrfInput.value : '';
+        }
+
+        // Загрузка логов при открытии вкладки
+        const logsTab = document.getElementById('logs-tab');
+        if (logsTab) {
+            logsTab.addEventListener('shown.bs.tab', loadActivityLogs);
+        }
+
+        // Кнопка обновления логов
+        const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+        if (refreshLogsBtn) {
+            refreshLogsBtn.addEventListener('click', loadActivityLogs);
+        }
+    });
+
+    // Функция загрузки логов
+    async function loadActivityLogs() {
+        const logsTableBody = document.getElementById('logsTableBody');
+        if (!logsTableBody) return;
+
+        // Показываем индикатор загрузки
+        logsTableBody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <span class="ms-2">Загрузка логов...</span>
+                </td>
+            </tr>
+        `;
+
+        try {
+            const response = await fetch('/system/get-activity-logs/');  // ИСПРАВЛЕННЫЙ URL
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                renderLogsTable(data.logs);
+            } else {
+                throw new Error(data.message || 'Ошибка сервера');
+            }
+        } catch (error) {
+            logsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center py-4">
+                        <div class="alert alert-danger m-0">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            ${error.message || 'Ошибка при загрузке логов'}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    // Функция отрисовки логов
+    function renderLogsTable(logs) {
+        const logsTableBody = document.getElementById('logsTableBody');
+        if (!logs || logs.length === 0) {
+            logsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">
+                        <i class="bi bi-info-circle"></i> Нет данных для отображения
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        logsTableBody.innerHTML = logs.map(log => `
+            <tr>
+                <td class="align-middle">
+                    <small class="text-muted">${log.timestamp}</small>
+                </td>
+                <td class="align-middle">
+                    <span class="fw-semibold">${log.user}</span>
+                </td>
+                <td class="align-middle">
+                    <i class="bi ${getActionIcon(log.action_type)} me-2"></i>
+                    ${log.action}
+                </td>
+                <td class="align-middle">${log.description}</td>
+            </tr>
+        `).join('');
+    }
+
+    // Функция получения иконки для действия
+    function getActionIcon(actionType) {
+        const icons = {
+            'LOGIN': 'bi-box-arrow-in-right',
+            'LOGOUT': 'bi-box-arrow-right',
+            'PROFILE_UPDATE': 'bi-person-lines-fill',
+            'PASSWORD_CHANGE': 'bi-shield-lock',
+            'BOT_TEST': 'bi-robot',
+            'SHIPMENT_CREATE': 'bi-plus-square',
+            'SHIPMENT_UPDATE': 'bi-pencil-square',
+            'SHIPMENT_DELETE': 'bi-trash',
+            'BACKUP_CREATE': 'bi-save',
+        };
+        return icons[actionType] || 'bi-activity';
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "telegram/base_notification.html" %}
+
+{% block content %}
+✏️ <b>Обновление отправления #{{ shipment.id }}</b>
+
+{% if changes %}
+Изменения:
+{% for field, (old_val, new_val) in changes.items() %}
+- {{ field }}: {{ old_val }} → {{ new_val }}
+{% endfor %}
+{% endif %}
+{% endblock %}
+
+{% set footer = "Изменить: /edit_{{ shipment.id }}" %}

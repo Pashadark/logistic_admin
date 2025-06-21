@@ -110,37 +110,73 @@
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead>
-                        <tr class="table-header-clean">
-    <th width="80" class="text-center py-3">ID <i class="bi bi-hash ms-1"></i></th>
-    <th width="120" class="text-center py-3">Тип <i class="bi bi-tag ms-1"></i></th>
-    <th class="text-center py-3">Накладная <i class="bi bi-file-text ms-1"></i></th>
-    <th class="text-center py-3">Город <i class="bi bi-geo-alt ms-1"></i></th>
-    <th width="140" class="text-center py-3">Статус <i class="bi bi-circle-fill ms-1" style="font-size: 6px; vertical-align: middle;"></i></th>
-    <th width="100" class="text-center py-3">Комментарии <i class="bi bi-chat-left-text ms-1"></i></th>
-    <th width="100" class="text-center py-3">Файлы <i class="bi bi-file-zip ms-1"></i></th>
-    <th width="140" class="text-center py-3">Дата <i class="bi bi-calendar3 ms-1"></i></th>
-    <th width="120" class="text-center py-3">Действия <i class="bi bi-gear ms-1"></i></th>
-</tr>
+                        <tr class="table-header-modern">
+                            <th width="80" class="text-center">
+                                <div class="header-cell-content">
+                                    <span>ID</span>
+                                </div>
+                            </th>
+                            <th width="120" class="text-center">
+                                <div class="header-cell-content">
+                                    <span>Тип</span>
+                                </div>
+                            </th>
+                            <th class="text-center">
+                                <div class="header-cell-content">
+                                    <span>Накладная</span>
+                                </div>
+                            </th>
+                            <th class="text-center">
+                                <div class="header-cell-content">
+                                    <span>Город</span>
+                                </div>
+                            </th>
+                            <th width="140" class="text-center">
+                                <div class="header-cell-content">
+                                    <span>Статус</span>
+                                </div>
+                            </th>
+                            <th width="100" class="text-center">
+                                <div class="header-cell-content column-with-icon">
+                                    <div>Комментарии</div>
+                                </div>
+                            </th>
+                            <th width="100" class="text-center">
+                                <div class="header-cell-content column-with-icon">
+                                    <div>Файлы</div>
+                                </div>
+                            </th>
+                            <th width="140" class="text-center">
+                                <div class="header-cell-content">
+                                    <span>Дата</span>
+                                </div>
+                            </th>
+                            <th width="120" class="text-center">
+                                <div class="header-cell-content">
+                                    <span>Действия</span>
+                                </div>
+                            </th>
+                        </tr>
                     </thead>
                     <tbody>
                         {% for shipment in shipments %}
                         <tr>
-                            <td class="fw-semibold">#{{ shipment.id }}</td>
-                            <td>
+                            <td class="fw-semibold text-center">#{{ shipment.id }}</td>
+                            <td class="text-center">
                                 {% if shipment.type == 'send' %}
                                     <span class="badge bg-primary bg-opacity-10 text-primary py-2 px-3 w-100">Отправка</span>
                                 {% else %}
                                     <span class="badge bg-success bg-opacity-10 text-success py-2 px-3 w-100">Получение</span>
                                 {% endif %}
                             </td>
-                            <td class="fw-medium">{{ shipment.waybill_number }}</td>
-                            <td>{{ shipment.city }}</td>
-                            <td>
+                            <td class="fw-medium text-center">{{ shipment.waybill_number|default:"-" }}</td>
+                            <td class="text-center">{{ shipment.city|default:"-" }}</td>
+                            <td class="text-center">
                                 <span class="badge py-2 px-3 w-100 badge-{{ shipment.status }}">
                                     {{ shipment.get_status_display }}
                                 </span>
                             </td>
-                            <td>
+                            <td class="text-center">
                                 {% if shipment.comment %}
                                     <button class="btn btn-action has-comment"
                                             data-bs-toggle="tooltip"
@@ -155,25 +191,25 @@
                                     </button>
                                 {% endif %}
                             </td>
-                            <td>
-    {% if shipment.waybill_photo or shipment.product_photo %}
-        <a href="{% url 'download_shipment_files' shipment.id %}"
-           class="btn btn-action text-primary"
-           data-bs-toggle="tooltip"
-           title="Скачать файлы отправки">
-            <i class="bi bi-file-zip"></i>
-        </a>
-    {% else %}
-        <span class="btn btn-action text-muted"
-              data-bs-toggle="tooltip"
-              title="Нет файлов">
-            <i class="bi bi-file-zip"></i>
-        </span>
-    {% endif %}
-</td>
-                            <td class="text-muted">{{ shipment.timestamp|date:"d.m.Y H:i" }}</td>
-                            <td class="text-end">
-                                <div class="d-flex gap-2 justify-content-end">
+                            <td class="text-center">
+                                {% if shipment.waybill_photo or shipment.product_photo %}
+                                    <a href="{% url 'download_shipment_files' shipment.id %}"
+                                       class="btn btn-action text-primary"
+                                       data-bs-toggle="tooltip"
+                                       title="Скачать файлы отправки">
+                                        <i class="bi bi-file-zip"></i>
+                                    </a>
+                                {% else %}
+                                    <span class="btn btn-action text-muted"
+                                          data-bs-toggle="tooltip"
+                                          title="Нет файлов">
+                                        <i class="bi bi-file-zip"></i>
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted text-center">{{ shipment.timestamp|date:"d.m.Y H:i" }}</td>
+                            <td class="text-center">
+                                <div class="d-flex gap-2 justify-content-center">
                                     <a href="{% url 'shipment_details' shipment.id %}"
                                        class="btn btn-action text-primary"
                                        data-bs-toggle="tooltip" title="Детали">

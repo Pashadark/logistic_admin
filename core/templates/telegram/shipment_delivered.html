@@ -1,0 +1,12 @@
+{% extends "telegram/base_notification.html" %}
+
+{% block content %}
+🎉 <b>Отправление доставлено!</b>
+
+▪️ ID: <code>{{ shipment.id }}</code>
+▪️ Накладная: {{ shipment.waybill_number }}
+▪️ Город: {{ shipment.city }}
+▪️ Получатель: {{ shipment.recipient_name|default:"Не указан" }}
+{% endblock %}
+
+{% set footer = "Подробнее: /details_{{ shipment.id }}" %}

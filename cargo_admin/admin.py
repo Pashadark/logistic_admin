@@ -1,13 +1,20 @@
 from django.contrib import admin
-from .models import Shipment
-from .forms import ShipmentFilterForm
-import csv
 from django.http import HttpResponse
+import csv
 from django.db.models import Q
 from django.utils.html import format_html
+from core.models import Profile, Shipment
+from .forms import ShipmentFilterForm  # Убедитесь, что этот импорт корректный
 
+# Модель Profile
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'phone', 'position')
+    search_fields = ('user__username', 'user__email', 'phone')
+    list_select_related = ('user',)
 
-
+# Модель Shipment
+@admin.register(Shipment)
 class ShipmentAdmin(admin.ModelAdmin):
     list_display = (
         'id',
@@ -16,21 +23,18 @@ class ShipmentAdmin(admin.ModelAdmin):
         'city',
         'get_status_badge',
         'timestamp',
-        'actions_column'  # ИЗМЕНИЛ НАЗВАНИЕ ЭТОГО ПОЛЯ
+        'actions_column'
     )
     list_filter = ('type', 'status', 'city', 'timestamp')
     search_fields = ('waybill_number', 'city', 'comment')
     ordering = ('-timestamp',)
     list_per_page = 20
-
-    # ИСПРАВЛЕННЫЙ АТРИБУТ ACTIONS - ДОЛЖЕН БЫТЬ СПИСКОМ
     actions = ['export_to_csv']
-
     change_list_template = 'admin/cargo_admin/shipment_change_list.html'
 
+    # Методы для Shipment
     def get_type_display(self, obj):
         return obj.get_type_display()
-
     get_type_display.short_description = 'Тип операции'
 
     def get_status_badge(self, obj):
@@ -46,18 +50,15 @@ class ShipmentAdmin(admin.ModelAdmin):
             '<span class="badge bg-{}">{}</span>',
             color, obj.get_status_display()
         )
-
     get_status_badge.short_description = 'Статус'
     get_status_badge.admin_order_field = 'status'
 
-    # ИЗМЕНИЛ НАЗВАНИЕ МЕТОДА (БЫЛО actions)
     def actions_column(self, obj):
         return format_html(
             '<a href="/admin/cargo_admin/shipment/{}/change/" class="btn btn-sm btn-outline-primary">✏️</a>'
             ' <a href="/admin/cargo_admin/shipment/{}/delete/" class="btn btn-sm btn-outline-danger">🗑️</a>',
             obj.id, obj.id
         )
-
     actions_column.short_description = 'Действия'
 
     def changelist_view(self, request, extra_context=None):
@@ -111,8 +112,4 @@ class ShipmentAdmin(admin.ModelAdmin):
             ])
 
         return response
-
     export_to_csv.short_description = "Экспорт выбранных в CSV"
-
-
-admin.site.register(Shipment, ShipmentAdmin)

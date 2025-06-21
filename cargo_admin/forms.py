@@ -1,10 +1,17 @@
 from django import forms
-from .models import Shipment
+from django.apps import apps
 
 
 class ShipmentFilterForm(forms.Form):
-    STATUS_CHOICES = [('', 'Все статусы')] + Shipment.STATUS_CHOICES
-    TYPE_CHOICES = [('', 'Все типы')] + Shipment.OPERATION_TYPES
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        Shipment = apps.get_model('core', 'Shipment')
+
+        STATUS_CHOICES = [('', 'Все статусы')] + Shipment.STATUS_CHOICES
+        TYPE_CHOICES = [('', 'Все типы')] + Shipment.TYPE_CHOICES
+
+        self.fields['status'].choices = STATUS_CHOICES
+        self.fields['type'].choices = TYPE_CHOICES
 
     search = forms.CharField(
         required=False,
@@ -12,12 +19,12 @@ class ShipmentFilterForm(forms.Form):
         widget=forms.TextInput(attrs={'placeholder': 'Номер, город или комментарий'})
     )
     status = forms.ChoiceField(
-        choices=STATUS_CHOICES,
+        choices=[],  # Будет заполнено в __init__
         required=False,
         label='Статус'
     )
     type = forms.ChoiceField(
-        choices=TYPE_CHOICES,
+        choices=[],  # Будет заполнено в __init__
         required=False,
         label='Тип операции'
     )

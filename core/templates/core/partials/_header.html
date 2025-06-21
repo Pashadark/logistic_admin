@@ -3,7 +3,7 @@
         <div class="d-flex align-items-center">
             {% if user.is_authenticated %}
             <div class="welcome-message me-3">
-
+                <!-- Здесь может быть приветственное сообщение -->
             </div>
             {% endif %}
         </div>
@@ -55,7 +55,7 @@
             <div class="dropdown">
                 <button class="user-menu-btn" id="userDropdown"
                         data-bs-toggle="dropdown" aria-expanded="false" title="Профиль">
-                    {% if user.profile.avatar %}
+                    {% if user.profile and user.profile.avatar %}
                     <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}"
                          class="rounded-circle" width="36" height="36">
                     {% else %}
@@ -77,7 +77,7 @@
                     aria-labelledby="userDropdown">
                     <li class="dropdown-header px-3 py-2">
                         <div class="d-flex align-items-center">
-                            {% if user.profile.avatar %}
+                            {% if user.profile and user.profile.avatar %}
                             <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}"
                                  class="rounded-circle me-3" width="48" height="48">
                             {% else %}
@@ -95,7 +95,7 @@
                                     {% endif %}
                                 </h6>
                                 <small class="text-muted">
-                                    {% if user.profile.position %}
+                                    {% if user.profile and user.profile.position %}
                                         {{ user.profile.position }}
                                     {% else %}
                                         Пользователь

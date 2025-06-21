@@ -14,10 +14,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cargo_admin',
     'django_bootstrap5',
-    'core'
+    'core',
+    'cargo_admin'
 ]
+
+# Настройки для резервных копий
+BACKUP_PATH = os.path.join(BASE_DIR, 'backups')
+
+# Создаем директорию для бэкапов, если ее нет
+os.makedirs(BACKUP_PATH, exist_ok=True)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -64,6 +70,8 @@ LOGIN_REDIRECT_URL = 'dashboard'  # Редирект после входа
 LOGOUT_REDIRECT_URL = 'login'     # Редирект после выхода
 
 LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
 
 WSGI_APPLICATION = 'logistic_admin.wsgi.application'
 

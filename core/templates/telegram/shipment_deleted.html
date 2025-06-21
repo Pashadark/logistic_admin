@@ -1,0 +1,9 @@
+{% extends "telegram/base_notification.html" %}
+
+{% block content %}
+❌ <b>Отправление удалено</b>
+
+ID: <code>{{ shipment_id }}</code>
+{% endblock %}
+
+{% set footer = "Создать новое: /new_shipment" %}

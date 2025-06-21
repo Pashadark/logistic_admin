@@ -136,34 +136,64 @@
     }
 }
 
-.table-header-clean th {
+/* Modern table header styles */
+/* Modern table header styles */
+.table-header-modern th {
     background-color: #f8fafc;
     color: #475569;
     font-weight: 600;
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    padding-top: 14px;
-    padding-bottom: 14px;
+    padding: 12px 8px;
     border-bottom: 2px solid #e2e8f0;
     position: sticky;
     top: 0;
     z-index: 10;
+    vertical-align: middle;
+    transition: all 0.2s ease;
 }
 
-.table-header-clean th i {
-    color: #94a3b8;
-    font-size: 0.9em;
-    vertical-align: baseline;
+.table-header-modern th:hover {
+    background-color: #f1f5f9;
 }
 
-.table-header-clean th:first-child {
+.header-cell-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* Стили для колонок с иконками */
+.column-with-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.header-icon {
+    font-size: 1.1rem;
+    color: #64748b;
+    opacity: 0.9;
+}
+
+/* First and last child border radius */
+.table-header-modern th:first-child {
     border-radius: 8px 0 0 0;
-    padding-left: 1.5rem;
+    padding-left: 16px;
 }
 
-.table-header-clean th:last-child {
+.table-header-modern th:last-child {
     border-radius: 0 8px 0 0;
-    padding-right: 1.5rem;
+    padding-right: 16px;
+}
+
+/* Add subtle shadow when scrolling */
+.table-header-modern th {
+    box-shadow: 0 2px 2px -1px rgba(0,0,0,0.05);
 }
 

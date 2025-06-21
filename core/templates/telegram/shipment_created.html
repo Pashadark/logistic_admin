@@ -1,0 +1,13 @@
+{% extends "telegram/base_notification.html" %}
+
+{% block content %}
+📦 <b>Новая поставка создана</b>
+
+▪️ ID: <code>{{ shipment.id }}</code>
+▪️ Тип: {{ shipment.get_type_display() }}
+▪️ Накладная: {{ shipment.waybill_number }}
+▪️ Город: {{ shipment.city }}
+▪️ Статус: {{ shipment.get_status_display() }}
+{% endblock %}
+
+{% set footer = "Детали: /details_{{ shipment.id }}" %}
