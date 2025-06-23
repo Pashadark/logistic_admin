@@ -53,7 +53,7 @@
         <div class="card-header bg-white border-0 py-3 d-flex flex-wrap align-items-center justify-content-between">
             <h5 class="card-title mb-0">Все отправки</h5>
             <div class="dtf-button-wrapper">
-                <a href="#" class="dtf-button dtf-button-success">
+                <a href="#" class="dtf-button dtf-button-success" data-bs-toggle="modal" data-bs-target="#createShipmentModal">
                     <i class="bi bi-plus-lg me-2"></i> Новая отправка
                 </a>
             </div>
@@ -111,51 +111,16 @@
                 <table class="table table-hover align-middle">
                     <thead>
                         <tr class="table-header-modern">
-                            <th width="80" class="text-center">
-                                <div class="header-cell-content">
-                                    <span>ID</span>
-                                </div>
-                            </th>
-                            <th width="120" class="text-center">
-                                <div class="header-cell-content">
-                                    <span>Тип</span>
-                                </div>
-                            </th>
-                            <th class="text-center">
-                                <div class="header-cell-content">
-                                    <span>Накладная</span>
-                                </div>
-                            </th>
-                            <th class="text-center">
-                                <div class="header-cell-content">
-                                    <span>Город</span>
-                                </div>
-                            </th>
-                            <th width="140" class="text-center">
-                                <div class="header-cell-content">
-                                    <span>Статус</span>
-                                </div>
-                            </th>
-                            <th width="100" class="text-center">
-                                <div class="header-cell-content column-with-icon">
-                                    <div>Комментарии</div>
-                                </div>
-                            </th>
-                            <th width="100" class="text-center">
-                                <div class="header-cell-content column-with-icon">
-                                    <div>Файлы</div>
-                                </div>
-                            </th>
-                            <th width="140" class="text-center">
-                                <div class="header-cell-content">
-                                    <span>Дата</span>
-                                </div>
-                            </th>
-                            <th width="120" class="text-center">
-                                <div class="header-cell-content">
-                                    <span>Действия</span>
-                                </div>
-                            </th>
+                            <th width="80" class="text-center">ID</th>
+                            <th width="120" class="text-center">Тип</th>
+                            <th class="text-center">Накладная</th>
+                            <th class="text-center">Город</th>
+                            <th width="100" class="text-center">Вес (кг)</th>
+                            <th width="140" class="text-center">Статус</th>
+                            <th width="100" class="text-center">Комментарии</th>
+                            <th width="100" class="text-center">Файлы</th>
+                            <th width="140" class="text-center">Дата</th>
+                            <th width="120" class="text-center">Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -171,6 +136,7 @@
                             </td>
                             <td class="fw-medium text-center">{{ shipment.waybill_number|default:"-" }}</td>
                             <td class="text-center">{{ shipment.city|default:"-" }}</td>
+                            <td class="text-center">{{ shipment.weight|default:"-" }}</td>
                             <td class="text-center">
                                 <span class="badge py-2 px-3 w-100 badge-{{ shipment.status }}">
                                     {{ shipment.get_status_display }}
@@ -225,7 +191,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="9" class="text-center py-5">
+                            <td colspan="10" class="text-center py-5">
                                 <div class="d-flex flex-column align-items-center">
                                     <i class="bi bi-box-seam fs-1 text-muted mb-3"></i>
                                     <h5 class="text-muted">Отправлений не найдено</h5>
@@ -285,4 +251,79 @@
         </div>
     </div>
 </div>
+
+<!-- Модальное окно создания отправки -->
+<div class="modal fade" id="createShipmentModal" tabindex="-1" aria-labelledby="createShipmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createShipmentModalLabel">Новая отправка</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'create_shipment' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="type" class="form-label">Тип отправки</label>
+                            <select class="form-select" id="type" name="type" required>
+                                <option value="" selected disabled>Выберите тип</option>
+                                <option value="send">Отправка</option>
+                                <option value="receive">Получение</option>
+                                <option value="transfer">Перемещение</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="waybill_number" class="form-label">Номер накладной</label>
+                            <input type="text" class="form-control" id="waybill_number" name="waybill_number" required placeholder="Введите номер накладной">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="city" class="form-label">Город</label>
+                            <input type="text" class="form-control" id="city" name="city" required placeholder="Введите город">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="weight" class="form-label">Вес (кг)</label>
+                            <input type="number" step="0.01" class="form-control" id="weight" name="weight" placeholder="0.00">
+                        </div>
+                        <div class="col-12">
+                            <label for="comment" class="form-label">Комментарий</label>
+                            <textarea class="form-control" id="comment" name="comment" rows="2" placeholder="Дополнительная информация"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="waybill_photo" class="form-label">Фото накладной</label>
+                            <input class="form-control" type="file" id="waybill_photo" name="waybill_photo" accept="image/*">
+                            <div class="form-text">Поддерживаются JPG, PNG (макс. 5MB)</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="product_photo" class="form-label">Фото товара</label>
+                            <input class="form-control" type="file" id="product_photo" name="product_photo" accept="image/*">
+                            <div class="form-text">Поддерживаются JPG, PNG (макс. 5MB)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-2"></i> Создать отправку
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Сброс фильтров
+    document.getElementById('resetFilters').addEventListener('click', function() {
+        window.location.href = "{% url 'dashboard' %}";
+    });
+
+    // Инициализация tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
 {% endblock %}

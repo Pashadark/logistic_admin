@@ -1,4 +1,46 @@
-/* Dashboard specific styles */
+/* Добавьте это в начало dashboard.css */
+.dashboard-container,
+.dashboard-stats,
+.stat-card,
+.stat-info h3,
+.stat-info p,
+.card-header,
+.card-title,
+.table,
+.table th,
+.table td,
+.pagination,
+.filter-card,
+.filter-card .form-label,
+.filter-card .form-control,
+.filter-card .form-select,
+.dtf-button {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Для цифр в статистике можно сделать немного жирнее */
+.stat-info h3 {
+    font-weight: 500;
+}
+
+/* Для заголовков */
+.card-title {
+    font-weight: 500;
+}
+
+/* Для текста в таблице */
+.table {
+    font-weight: 400;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+    padding: 20px;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+/* Stats Cards */
 .dashboard-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -40,6 +82,7 @@
     color: var(--gray);
 }
 
+/* Filter Section */
 .search-filter {
     background: white;
     border-radius: 10px;
@@ -51,26 +94,150 @@
     align-items: center;
 }
 
-.search-filter .form-group {
-    margin-bottom: 0;
-    flex: 1;
-    min-width: 200px;
+/* Table Styles */
+.table-hover {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.search-filter .btn {
-    height: calc(100% - 10px);
+.table-hover td {
+    vertical-align: middle;
+    text-align: center;
+    padding: 0.75rem 0.5rem;
 }
 
-/* Responsive adjustments */
+.table-hover thead th {
+    vertical-align: middle;
+    text-align: center;
+    background-color: #f8f9fa;
+    font-weight: 500;
+    padding: 12px 8px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* Perfect Circle Action Buttons */
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    border: none;
+    background-color: transparent;
+    transition: all 0.2s ease;
+    position: relative;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.btn-action::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background-color: transparent;
+    transition: background-color 0.2s ease;
+    z-index: 0;
+}
+
+.btn-action:hover::before {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.btn-action .bi {
+    position: relative;
+    font-size: 1.2rem;
+    line-height: 1;
+    width: 1.2rem;
+    height: 1.2rem;
+    display: block;
+    z-index: 1;
+    transition: transform 0.2s ease;
+}
+
+.btn-action:hover .bi {
+    transform: scale(1.1);
+}
+
+/* Button Colors */
+.btn-action.has-comment .bi {
+    color: var(--bs-success);
+}
+
+.btn-action:not(.has-comment) .bi {
+    color: var(--bs-gray-500);
+}
+
+.btn-action.btn-file .bi {
+    color: var(--bs-primary);
+}
+
+.btn-action.text-primary .bi {
+    color: var(--bs-primary);
+}
+
+.btn-action.text-info .bi {
+    color: var(--bs-info);
+}
+
+/* Badge Styles */
+.badge {
+    font-weight: normal;
+    padding: 0.35em 0.65em;
+    min-width: 80px;
+    display: inline-block;
+    text-align: center;
+    border-radius: 4px;
+}
+
+.badge-created { background-color: #6c757d; color: white; }
+.badge-processing { background-color: #0d6efd; color: white; }
+.badge-transit { background-color: #ffc107; color: #212529; }
+.badge-delivered { background-color: #198754; color: white; }
+.badge-problem { background-color: #dc3545; color: white; }
+
+/* Modern Table Header */
+.table-header-modern th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 8px;
+    border-bottom: 2px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.header-cell-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.column-with-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+/* Responsive Adjustments */
 @media (max-width: 992px) {
     .sidebar {
         width: 70px;
         overflow: hidden;
-    }
-
-    .sidebar .logo h2,
-    .sidebar .nav-link span {
-        display: none;
     }
 
     .sidebar .nav-link {
@@ -82,10 +249,6 @@
         margin-right: 0;
         font-size: 1.5rem;
     }
-
-    .main {
-        margin-left: 70px;
-    }
 }
 
 @media (max-width: 768px) {
@@ -93,12 +256,24 @@
         padding: 15px;
     }
 
-    .header {
-        padding: 15px;
-    }
-
     .search-filter {
         flex-direction: column;
-        align-items: stretch;
+    }
+
+    .table-hover td,
+    .table-hover th {
+        padding: 8px 4px;
+        font-size: 0.9rem;
+    }
+
+    .btn-action {
+        width: 32px;
+        height: 32px;
+    }
+
+    .btn-action .bi {
+        font-size: 1.1rem;
+        width: 1.1rem;
+        height: 1.1rem;
     }
 }

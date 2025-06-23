@@ -27,12 +27,14 @@ from .views import (
     admin_clear_database,
     admin_restore_database,
     get_activity_logs,
+    create_shipment
 )
 
 urlpatterns = [
     path('', DashboardView.as_view(), name='dashboard'),
     path('register/', register_view, name='register'),
     path('login/', custom_login_view, name='login'),
+    path('create-shipment/', create_shipment, name='create_shipment'),
     path('shipment/<str:shipment_id>/download/', download_shipment_files, name='download_shipment_files'),
     path('shipment/<str:shipment_id>/', shipment_details, name='shipment_details'),
     path('shipment/<str:shipment_id>/delete/', views.delete_shipment, name='delete_shipment'),
@@ -47,19 +49,13 @@ urlpatterns = [
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('404/', custom_404, name='custom_404'),
 
-    # Админ панель (с новым префиксом)
+    # Админ панель
     path('system/', admin_panel, name='admin_panel'),
-
-    # Управление пользователями
     path('system/create-user/', admin_create_user, name='admin_create_user'),
     path('system/edit-user/<int:user_id>/', admin_edit_user, name='admin_edit_user'),
     path('system/delete-user/<int:user_id>/', admin_delete_user, name='admin_delete_user'),
-
-    # Управление ботом
     path('system/test-bot/', admin_test_bot, name='admin_test_bot'),
     path('system/set-bot-access/', admin_set_bot_access, name='admin_set_bot_access'),
-
-    # Управление базой данных
     path('system/create-backup/', admin_create_backup, name='admin_create_backup'),
     path('system/download-backup/', admin_download_backup, name='admin_download_backup'),
     path('system/get-backup-info/', admin_get_backup_info, name='admin_get_backup_info'),

@@ -22,6 +22,8 @@ function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
 }
 
+
+
 // Загрузка логов
 async function loadActivityLogs() {
     const logsTableBody = document.getElementById('logsTableBody');
@@ -55,6 +57,7 @@ async function loadActivityLogs() {
         showError(logsTableBody, error.message);
     }
 }
+
 
 // Показать индикатор загрузки
 function showLoadingIndicator(container) {

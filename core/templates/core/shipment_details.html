@@ -18,27 +18,34 @@
     <!-- Карточка с информацией (левая колонка) -->
     <div class="col-md-6 mb-4">
         <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Отправление #{{ shipment.id }}</span>
-            </div>
+    <!-- Шапка карточки с цветом в зависимости от типа -->
+    <div class="card-header d-flex justify-content-between align-items-center
+                {% if shipment.type == 'send' %}bg-primary bg-opacity-10{% else %}bg-success bg-opacity-10{% endif %}">
+        <span class="d-flex align-items-center">
+            <!-- Бейдж типа на одной строке с заголовком -->
+            {% if shipment.type == 'send' %}
+                <span class="badge bg-primary text-white me-2">Отправка</span>
+            {% else %}
+                <span class="badge bg-success text-white me-2">Получение</span>
+            {% endif %}
+            <span>Отправление #{{ shipment.id }}</span>
+        </span>
 
-            <div class="card-body">
-                <h5 class="mb-3">Основная информация</h5>
-                <div class="info-grid">
-                    <div class="info-item">
-    <span class="info-label">Тип:</span>
-    {% if shipment.type == 'send' %}
-        <span class="badge bg-primary bg-opacity-10 text-primary py-2 px-3">Отправка</span>
-    {% else %}
-        <span class="badge bg-success bg-opacity-10 text-success py-2 px-3">Получение</span>
-    {% endif %}
-</div>
-                    <div class="info-item">
-                    <span class="info-label">Статус:</span>
-                    <span class="badge badge-{{ shipment.status }}">
-                        {{ shipment.get_status_display }}
-                    </span>
-                </div>
+        <!-- Дополнительные элементы справа (если нужны) -->
+        <div>
+            <!-- Можно добавить кнопки или другие элементы -->
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="info-grid">
+            <!-- Остальное содержимое card-body без изменений -->
+            <div class="info-item">
+                <span class="info-label">Статус:</span>
+                <span class="badge py-1 px-2 badge-{{ shipment.status }}">
+                    {{ shipment.get_status_display }}
+                </span>
+            </div>
                     <div class="info-item">
                         <span class="info-label">Накладная:</span>
                         <span>{{ shipment.waybill_number|default:"-" }}</span>
@@ -50,6 +57,9 @@
                     <div class="info-item">
                         <span class="info-label">Дата:</span>
                         <span>{{ shipment.timestamp|date:"d.m.Y H:i" }}</span>
+                    </div> <div class="info-item">
+                        <span class="info-label">Вес:</span>
+                        <span>Тест</span>
                     </div>
                 </div>
 

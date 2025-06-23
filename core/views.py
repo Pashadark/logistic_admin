@@ -1,4 +1,3 @@
-import io
 import os
 import zipfile
 import json
@@ -19,12 +18,11 @@ from django.db.models import Q
 from django.contrib.auth import logout as auth_logout
 from django.shortcuts import redirect
 from django.contrib import messages
-
 from .models import Profile, Shipment, UserActivity
 import requests
+import io
 
 
-# Проверка прав администратора
 def is_admin(user):
     return user.is_authenticated and user.is_staff
 
@@ -34,7 +32,6 @@ def admin_panel(request):
     users = User.objects.all().select_related('profile')
     groups = Group.objects.all()
 
-    # Статистика бота
     bot_stats = {
         'active_users': User.objects.filter(profile__telegram_id__isnull=False).count(),
         'messages_today': 42,
@@ -42,7 +39,6 @@ def admin_panel(request):
         'last_activity': datetime.now()
     }
 
-    # Информация о последнем бэкапе
     last_backup = None
     try:
         if hasattr(settings, 'BACKUP_PATH') and os.path.exists(settings.BACKUP_PATH):
@@ -79,7 +75,7 @@ def admin_create_user(request):
 
             if User.objects.filter(username=username).exists():
                 return JsonResponse({'success': False, 'message': 'Пользователь с таким именем уже существует'},
-                                    status=400)
+                                  status=400)
 
             user = User.objects.create_user(
                 username=username,
@@ -95,7 +91,6 @@ def admin_create_user(request):
                 except Group.DoesNotExist:
                     pass
 
-            # Логирование действия
             UserActivity.objects.create(
                 user=request.user,
                 action_type='USER_CREATE',
@@ -126,19 +121,16 @@ def admin_edit_user(request, user_id):
             if not username:
                 return JsonResponse({'success': False, 'message': 'Имя пользователя обязательно'}, status=400)
 
-            # Обновляем основные данные пользователя
             user.username = username
             user.email = email
             user.is_active = is_active
             user.is_staff = is_staff
             user.save()
 
-            # Обновляем профиль (Telegram ID)
             profile = user.profile
             profile.telegram_id = telegram_id
             profile.save()
 
-            # Обновляем группы
             user.groups.clear()
             if group_id:
                 try:
@@ -147,7 +139,6 @@ def admin_edit_user(request, user_id):
                 except Group.DoesNotExist:
                     pass
 
-            # Логирование действия
             UserActivity.objects.create(
                 user=request.user,
                 action_type='USER_UPDATE',
@@ -199,87 +190,94 @@ def admin_delete_user(request, user_id):
 
 
 @staff_member_required
-@require_POST
 def admin_test_bot(request):
-    try:
-        data = json.loads(request.body)
-        message_text = data.get('message', 'Тестовое сообщение из админ-панели')
-        send_to_group = data.get('is_group_message', True)
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            message_text = data.get('message', 'Тестовое сообщение из админ-панели')
+            send_to_group = data.get('is_group_message', True)
 
-        bot_token = settings.TELEGRAM_BOT_TOKEN
-        if not bot_token:
+            if not settings.TELEGRAM_BOT_TOKEN:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Токен бота не настроен в системе'
+                }, status=500)
+
+            if send_to_group:
+                chat_id = settings.TELEGRAM_LOG_CHAT_ID
+                target = "группу"
+            else:
+                if hasattr(request.user, 'profile') and request.user.profile.telegram_id:
+                    chat_id = request.user.profile.telegram_id
+                    target = "личные сообщения"
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Telegram ID пользователя не настроен'
+                    }, status=400)
+
+            response = requests.post(
+                f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage",
+                json={
+                    'chat_id': chat_id,
+                    'text': message_text,
+                    'parse_mode': 'HTML'
+                },
+                timeout=10
+            )
+
+            response_data = response.json()
+            if not response.ok or not response_data.get('ok'):
+                error_msg = response_data.get('description', 'Unknown Telegram API error')
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Ошибка Telegram API: {error_msg}',
+                    'telegram_response': response_data
+                }, status=500)
+
+            UserActivity.objects.create(
+                user=request.user,
+                action_type='BOT_TEST',
+                description=f'Отправлено сообщение в {target}',
+                metadata={
+                    'chat_id': chat_id,
+                    'message_text': message_text,
+                    'is_group': send_to_group,
+                    'status': 'success'
+                }
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Сообщение успешно отправлено в {target}',
+                'message_id': response_data.get('result', {}).get('message_id')
+            })
+
+        except json.JSONDecodeError:
             return JsonResponse({
                 'success': False,
-                'message': 'Токен бота не настроен в системе'
-            }, status=500)
-
-        chat_id = settings.TELEGRAM_LOG_CHAT_ID if send_to_group else getattr(request.user.profile, 'telegram_id', None)
-
-        if not chat_id:
-            return JsonResponse({
-                'success': False,
-                'message': 'Не указан chat_id для отправки сообщения'
+                'message': 'Неверный формат JSON данных'
             }, status=400)
-
-        response = requests.post(
-            f"https://api.telegram.org/bot{bot_token}/sendMessage",
-            json={
-                'chat_id': chat_id,
-                'text': message_text,
-                'parse_mode': 'HTML'
-            },
-            timeout=10
-        )
-
-        response_data = response.json()
-        if not response.ok or not response_data.get('ok'):
-            error_msg = response_data.get('description', 'Unknown Telegram API error')
+        except requests.exceptions.RequestException as e:
             return JsonResponse({
                 'success': False,
-                'message': f'Ошибка Telegram API: {error_msg}',
-                'telegram_response': response_data
+                'message': f'Ошибка соединения с Telegram: {str(e)}'
+            }, status=500)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Внутренняя ошибка: {str(e)}'
             }, status=500)
 
-        # Логирование действия
-        UserActivity.objects.create(
-            user=request.user,
-            action_type='BOT_TEST',
-            description='Отправлено тестовое сообщение бота',
-            metadata={
-                'chat_id': chat_id,
-                'message_text': message_text,
-                'is_group': send_to_group,
-                'status': 'success'
-            }
-        )
-
-        return JsonResponse({
-            'success': True,
-            'message': f'Тестовое сообщение отправлено в {"группу" if send_to_group else "личные сообщения"}',
-            'message_id': response_data.get('result', {}).get('message_id')
-        })
-
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'message': 'Неверный формат JSON данных'
-        }, status=400)
-    except requests.exceptions.RequestException as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Ошибка соединения с Telegram: {str(e)}'
-        }, status=500)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Внутренняя ошибка: {str(e)}'
-        }, status=500)
+    return JsonResponse({
+        'success': False,
+        'message': 'Invalid request'
+    }, status=400)
 
 
 @staff_member_required
 def get_activity_logs(request):
     try:
-        # Получаем последние 30 записей активности
         logs = UserActivity.objects.select_related('user').order_by('-timestamp')[:30]
 
         logs_list = []
@@ -303,100 +301,15 @@ def get_activity_logs(request):
 
 
 @staff_member_required
-@require_POST
-def admin_test_bot(request):
-    try:
-        data = json.loads(request.body)
-        message_text = data.get('message', 'Тестовое сообщение из админ-панели')
-        send_to_group = data.get('is_group_message', True)
-
-        if not settings.TELEGRAM_BOT_TOKEN:
-            return JsonResponse({
-                'success': False,
-                'message': 'Токен бота не настроен в системе'
-            }, status=500)
-
-        # Определяем chat_id в зависимости от типа сообщения
-        if send_to_group:
-            chat_id = settings.TELEGRAM_LOG_CHAT_ID
-            target = "группу"
-        else:
-            if hasattr(request.user, 'profile') and request.user.profile.telegram_id:
-                chat_id = request.user.profile.telegram_id
-                target = "личные сообщения"
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Telegram ID пользователя не настроен'
-                }, status=400)
-
-        response = requests.post(
-            f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage",
-            json={
-                'chat_id': chat_id,
-                'text': message_text,
-                'parse_mode': 'HTML'
-            },
-            timeout=10
-        )
-
-        response_data = response.json()
-        if not response.ok or not response_data.get('ok'):
-            error_msg = response_data.get('description', 'Unknown Telegram API error')
-            return JsonResponse({
-                'success': False,
-                'message': f'Ошибка Telegram API: {error_msg}',
-                'telegram_response': response_data
-            }, status=500)
-
-        # Логирование действия
-        UserActivity.objects.create(
-            user=request.user,
-            action_type='BOT_TEST',
-            description=f'Отправлено сообщение в {target}',
-            metadata={
-                'chat_id': chat_id,
-                'message_text': message_text,
-                'is_group': send_to_group,
-                'status': 'success'
-            }
-        )
-
-        return JsonResponse({
-            'success': True,
-            'message': f'Сообщение успешно отправлено в {target}',
-            'message_id': response_data.get('result', {}).get('message_id')
-        })
-
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'success': False,
-            'message': 'Неверный формат JSON данных'
-        }, status=400)
-    except requests.exceptions.RequestException as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Ошибка соединения с Telegram: {str(e)}'
-        }, status=500)
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': f'Внутренняя ошибка: {str(e)}'
-        }, status=500)
-
-@staff_member_required
 def admin_create_backup(request):
     if request.method == 'POST':
         try:
-            # Создаем имя файла с текущей датой
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_filename = f"backup_{timestamp}.json"
             backup_path = os.path.join(settings.BACKUP_PATH, backup_filename)
 
-            # Создаем директорию для бэкапов, если ее нет
             os.makedirs(settings.BACKUP_PATH, exist_ok=True)
 
-            # Сериализуем важные данные
             data = {
                 'users': serializers.serialize('json', User.objects.all()),
                 'profiles': serializers.serialize('json', Profile.objects.all()),
@@ -404,11 +317,9 @@ def admin_create_backup(request):
                 'created_by': request.user.username
             }
 
-            # Сохраняем в файл
             with open(backup_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 
-            # Логирование действия
             UserActivity.objects.create(
                 user=request.user,
                 action_type='BACKUP_CREATE',
@@ -434,7 +345,6 @@ def admin_create_backup(request):
 @staff_member_required
 def admin_download_backup(request):
     try:
-        # Получаем последний бэкап
         if not os.path.exists(settings.BACKUP_PATH):
             return JsonResponse({'success': False, 'message': 'Директория с бэкапами не найдена'}, status=404)
 
@@ -445,7 +355,6 @@ def admin_download_backup(request):
         latest_backup = backups[0]
         backup_path = os.path.join(settings.BACKUP_PATH, latest_backup)
 
-        # Логирование действия
         UserActivity.objects.create(
             user=request.user,
             action_type='BACKUP_DOWNLOAD',
@@ -453,7 +362,6 @@ def admin_download_backup(request):
             metadata={'backup_file': latest_backup}
         )
 
-        # Создаем ответ с файлом
         response = FileResponse(open(backup_path, 'rb'))
         response['Content-Type'] = 'application/json'
         response['Content-Disposition'] = f'attachment; filename="{latest_backup}"'
@@ -496,10 +404,6 @@ def admin_set_backup_interval(request):
         try:
             interval = int(request.POST.get('interval', 0))
 
-            # Здесь должна быть логика сохранения интервала
-            # Например, в модели Settings или в базе данных
-
-            # Логирование действия
             UserActivity.objects.create(
                 user=request.user,
                 action_type='BACKUP_INTERVAL_UPDATE',
@@ -530,11 +434,8 @@ def admin_set_backup_interval(request):
 def admin_clear_database(request):
     if request.method == 'POST':
         try:
-            # Очищаем данные, но оставляем пользователей и настройки
             Shipment.objects.all().delete()
-            # Добавьте другие модели, которые нужно очистить
 
-            # Логирование действия
             UserActivity.objects.create(
                 user=request.user,
                 action_type='DATABASE_CLEAR',
@@ -566,10 +467,6 @@ def admin_restore_database(request):
                     'message': 'Файл бэкапа не загружен'
                 }, status=400)
 
-            # Здесь должна быть логика восстановления из бэкапа
-            # Это пример - реализуйте в зависимости от формата вашего бэкапа
-
-            # Логирование действия
             UserActivity.objects.create(
                 user=request.user,
                 action_type='DATABASE_RESTORE',
@@ -599,10 +496,6 @@ def admin_set_bot_access(request):
             global_access = data.get('global_access', False)
             allowed_users = data.get('allowed_users', [])
 
-            # Здесь должна быть логика сохранения настроек доступа к боту
-            # Например, сохранение в модели Settings или в базе данных
-
-            # Логирование действия
             UserActivity.objects.create(
                 user=request.user,
                 action_type='BOT_ACCESS_UPDATE',
@@ -705,7 +598,6 @@ def update_profile(request):
         profile = Profile.objects.get(user=user)
 
         try:
-            # Валидация email
             new_email = request.POST.get('email', '')
             if new_email and User.objects.exclude(pk=user.pk).filter(email=new_email).exists():
                 messages.error(request, 'Этот email уже используется другим пользователем')
@@ -716,7 +608,6 @@ def update_profile(request):
             user.email = new_email
             user.save()
 
-            # Обновление данных телефона
             phone = request.POST.get('phone', '').strip()
             if phone:
                 if not phone.isdigit():
@@ -726,14 +617,13 @@ def update_profile(request):
             else:
                 profile.phone = ''
 
-            # Обновление остальных полей профиля
             profile.position = request.POST.get('position', '')
             profile.address = request.POST.get('address', '')
             profile.telegram_id = request.POST.get('telegram_id', '')
             profile.save()
 
             messages.success(request, 'Профиль успешно обновлен')
-            UserActivity.log_activity(
+            UserActivity.objects.create(
                 user=user,
                 action_type='PROFILE_UPDATE',
                 description='Обновление профиля'
@@ -759,12 +649,10 @@ def update_avatar(request):
 
             avatar = request.FILES['avatar']
 
-            # Проверка размера файла (до 2MB)
             if avatar.size > 2 * 1024 * 1024:
                 messages.error(request, 'Размер файла не должен превышать 2MB')
                 return redirect('profile')
 
-            # Проверка типа файла
             if not avatar.name.lower().endswith(('.jpg', '.jpeg', '.png')):
                 messages.error(request, 'Поддерживаются только JPG/JPEG/PNG файлы')
                 return redirect('profile')
@@ -776,7 +664,7 @@ def update_avatar(request):
             profile.save()
 
             messages.success(request, 'Аватар успешно обновлен')
-            UserActivity.log_activity(
+            UserActivity.objects.create(
                 user=request.user,
                 action_type='AVATAR_CHANGE',
                 description='Изменение аватара'
@@ -847,7 +735,7 @@ def update_password(request):
             update_session_auth_hash(request, user)
 
             messages.success(request, 'Пароль успешно изменен')
-            UserActivity.log_activity(
+            UserActivity.objects.create(
                 user=user,
                 action_type='PASSWORD_CHANGE',
                 description='Изменение пароля'
@@ -943,16 +831,6 @@ def custom_login_view(request):
     return render(request, 'registration/login_standalone.html', {'form': form})
 
 
-def example_view(request):
-    # Примеры правильных сообщений
-    messages.success(request, 'Операция выполнена успешно!')
-    messages.error(request, 'Произошла ошибка!')
-    messages.warning(request, 'Внимание! Это предупреждение.')
-    messages.info(request, 'Информационное сообщение.')
-
-    return redirect('dashboard')
-
-
 @login_required
 def update_shipment_status(request, shipment_id):
     if request.method == 'POST':
@@ -966,7 +844,6 @@ def update_shipment_status(request, shipment_id):
 
             old_status = shipment.get_status_display()
 
-            # Проверка допустимости перехода статуса
             valid_transitions = {
                 'created': ['processing', 'problem'],
                 'processing': ['transit', 'problem'],
@@ -987,7 +864,7 @@ def update_shipment_status(request, shipment_id):
                 request,
                 f'Статус отправки #{shipment_id} изменен: {old_status} → {shipment.get_status_display()}'
             )
-            UserActivity.log_activity(
+            UserActivity.objects.create(
                 user=request.user,
                 action_type='SHIPMENT_STATUS',
                 description=f'Изменение статуса отправки #{shipment_id}',
@@ -1011,8 +888,23 @@ def update_shipment_status(request, shipment_id):
 def create_shipment(request):
     if request.method == 'POST':
         try:
-            # Здесь должна быть логика создания новой отправки
-            # shipment = Shipment.objects.create(...)
+            shipment = Shipment.objects.create(
+                user=request.user,
+                type=request.POST.get('type'),
+                waybill_number=request.POST.get('waybill_number'),
+                city=request.POST.get('city'),
+                status='created',
+                comment=request.POST.get('comment', ''),
+                weight=request.POST.get('weight')
+            )
+
+            if 'waybill_photo' in request.FILES:
+                shipment.waybill_photo = request.FILES['waybill_photo']
+
+            if 'product_photo' in request.FILES:
+                shipment.product_photo = request.FILES['product_photo']
+
+            shipment.save()
 
             UserActivity.objects.create(
                 user=request.user,
@@ -1080,7 +972,6 @@ def download_shipment_files(request, shipment_id):
         shipment = Shipment.objects.get(id=shipment_id)
         files_to_zip = []
 
-        # Проверяем и добавляем файлы в архив
         for file_field in ['waybill_photo', 'product_photo']:
             file = getattr(shipment, file_field)
             if file:
@@ -1092,7 +983,6 @@ def download_shipment_files(request, shipment_id):
             messages.warning(request, 'Нет файлов для скачивания')
             return redirect('shipment_details', shipment_id=shipment_id)
 
-        # Создаем архив
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             for file_path, arcname in files_to_zip:
@@ -1111,8 +1001,8 @@ def download_shipment_files(request, shipment_id):
         messages.error(request, f'Ошибка при создании архива: {str(e)}')
         return redirect('shipment_details', shipment_id=shipment_id)
 
-    def logout_view(request):
-        """Кастомный выход из системы с редиректом на страницу входа"""
-        auth_logout(request)
-        messages.info(request, "Вы успешно вышли из системы")
-        return redirect('login')
+
+def logout_view(request):
+    auth_logout(request)
+    messages.info(request, "Вы успешно вышли из системы")
+    return redirect('login')

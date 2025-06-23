@@ -19,12 +19,6 @@ INSTALLED_APPS = [
     'cargo_admin'
 ]
 
-# Настройки для резервных копий
-BACKUP_PATH = os.path.join(BASE_DIR, 'backups')
-
-# Создаем директорию для бэкапов, если ее нет
-os.makedirs(BACKUP_PATH, exist_ok=True)
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -33,22 +27,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'core.middleware.UpdateLastActivityMiddleware',
 ]
 
 ROOT_URLCONF = 'logistic_admin.urls'
-
-# Статические файлы
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-    BASE_DIR / 'core/static',
-]
-
-# Для разработки
-if DEBUG:
-    STATICFILES_DIRS.append(BASE_DIR / 'core/static')
 
 TEMPLATES = [
     {
@@ -65,13 +47,6 @@ TEMPLATES = [
         },
     },
 ]
-
-LOGIN_REDIRECT_URL = 'dashboard'  # Редирект после входа
-LOGOUT_REDIRECT_URL = 'login'     # Редирект после выхода
-
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'login'
 
 WSGI_APPLICATION = 'logistic_admin.wsgi.application'
 
@@ -102,11 +77,16 @@ TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 
-# Настройки для работы с медиафайлами
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+    BASE_DIR / 'core/static',
+]
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Создаем папку для медиа, если не существует
 if not os.path.exists(MEDIA_ROOT):
     os.makedirs(MEDIA_ROOT)
     os.makedirs(os.path.join(MEDIA_ROOT, 'waybills'), exist_ok=True)
@@ -118,11 +98,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 TELEGRAM_BOT_TOKEN = "7833491235:AAEeP3bJWIgWxAjdMhYv6zvTE6dIbe7Ob2U"
 TELEGRAM_LOG_CHAT_ID = -1002580459963
 
-# Добавьте в конец файла
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = 'login'
+
 ADMIN_SITE_HEADER = "Искра"
 ADMIN_SITE_TITLE = "Админ панель"
-
-print("\nMEDIA DEBUG:")
-print("MEDIA_ROOT:", MEDIA_ROOT)
-print("MEDIA_URL:", MEDIA_URL)
-print("Waybills exists:", os.path.exists(os.path.join(MEDIA_ROOT, 'waybills')))

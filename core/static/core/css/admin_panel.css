@@ -1,3 +1,4 @@
+/* Стили для навигационных табов */
 .nav-tabs .nav-link {
     font-weight: 500;
     border: none;
@@ -15,6 +16,77 @@
     padding: 20px 0;
 }
 
+/* Стили для таблицы логов */
+#activityLogsTable {
+    width: 100%;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+#activityLogsTable th,
+#activityLogsTable td {
+    vertical-align: middle;
+    padding: 0.75rem;
+    text-align: center;
+}
+
+#activityLogsTable th {
+    font-weight: 500;
+    background-color: #f8f9fa;
+    text-align: center;
+}
+
+/* Стили для иконок действий */
+.log-entry-icon {
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+/* Стили для таблицы пользователей */
+.table-hover {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-hover thead th {
+    vertical-align: middle;
+    text-align: center;
+    background-color: #f8f9fa;
+    font-weight: 500;
+    padding: 12px 8px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table-hover tbody td {
+    vertical-align: middle;
+    text-align: center;
+    padding: 10px 8px;
+    border-top: 1px solid #dee2e6;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Специфичные стили для столбцов */
+.table-hover td:nth-child(1), /* ID */
+.table-hover th:nth-child(1) {
+    width: 60px;
+}
+
+.table-hover td:nth-child(2), /* Аватар */
+.table-hover th:nth-child(2) {
+    width: 70px;
+}
+
+.table-hover td:nth-child(8), /* Действия */
+.table-hover th:nth-child(8) {
+    width: 120px;
+    min-width: 120px;
+}
+
+/* Стили для аватаров */
 .avatar-placeholder {
     display: inline-flex;
     align-items: center;
@@ -25,40 +97,44 @@
     border-radius: 50%;
 }
 
-/* Стили для таблицы логов */
-#activityLogsTable {
-    font-size: 0.9rem;
+/* Стили для бейджей */
+.badge {
+    font-weight: normal;
+    padding: 0.35em 0.65em;
+    min-width: 80px;
+    display: inline-block;
+    text-align: center;
 }
 
-#activityLogsTable th {
-    font-weight: 500;
-    background-color: #f8f9fa;
+/* Центрирование кнопок действий */
+.btn-group {
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
 }
 
-.log-entry-icon {
-    font-size: 1.1rem;
-    margin-right: 0.5rem;
-    vertical-align: middle;
+/* Дополнительные стили для выравнивания */
+.table-hover td {
+    white-space: nowrap;
 }
 
-.log-entry-action {
-    font-weight: 500;
+/* Стили для текста в ячейках */
+.table-hover td.text-cell {
+    white-space: normal;
+    text-align: left;
+    padding-left: 15px;
 }
 
-.log-entry-user {
-    font-weight: 500;
-    color: #0d6efd;
-}
+/* Адаптивные стили */
+@media (max-width: 768px) {
+    .table-hover td,
+    .table-hover th {
+        padding: 8px 5px;
+        font-size: 0.9rem;
+    }
 
-.log-entry-time {
-    color: #6c757d;
-    font-size: 0.85rem;
-}
-
-#botGlobalAccess:checked ~ #restrictedAccessSection {
-    display: none !important;
-}
-
-#botGlobalAccess:not(:checked) ~ #restrictedAccessSection {
-    display: block !important;
+    .badge {
+        min-width: 60px;
+        font-size: 0.75rem;
+    }
 }

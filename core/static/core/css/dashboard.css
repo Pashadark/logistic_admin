@@ -1,4 +1,46 @@
-/* Dashboard specific styles */
+/* Добавьте это в начало dashboard.css */
+.dashboard-container,
+.dashboard-stats,
+.stat-card,
+.stat-info h3,
+.stat-info p,
+.card-header,
+.card-title,
+.table,
+.table th,
+.table td,
+.pagination,
+.filter-card,
+.filter-card .form-label,
+.filter-card .form-control,
+.filter-card .form-select,
+.dtf-button {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Для цифр в статистике можно сделать немного жирнее */
+.stat-info h3 {
+    font-weight: 500;
+}
+
+/* Для заголовков */
+.card-title {
+    font-weight: 500;
+}
+
+/* Для текста в таблице */
+.table {
+    font-weight: 400;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+    padding: 20px;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+/* Stats Cards */
 .dashboard-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -40,6 +82,7 @@
     color: var(--gray);
 }
 
+/* Filter Section */
 .search-filter {
     background: white;
     border-radius: 10px;
@@ -51,31 +94,105 @@
     align-items: center;
 }
 
-/* Добавим в конец файла */
-.info-item {
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #eee;
+/* Table Styles */
+.table-hover {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.info-label {
-    font-weight: 600;
-    color: var(--primary);
-    display: inline-block;
-    min-width: 120px;
+.table-hover td {
+    vertical-align: middle;
+    text-align: center;
+    padding: 0.75rem 0.5rem;
 }
 
-.comment-box {
+.table-hover thead th {
+    vertical-align: middle;
+    text-align: center;
     background-color: #f8f9fa;
-    border-left: 3px solid var(--secondary);
-    padding: 0.75rem;
-    border-radius: 0 4px 4px 0;
-    margin-top: 0.5rem;
+    font-weight: 500;
+    padding: 12px 8px;
+    border-bottom: 2px solid #dee2e6;
 }
 
-.img-fluid {
-    max-height: 300px;
-    object-fit: contain;
+/* Perfect Circle Action Buttons */
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    border: none;
+    background-color: transparent;
+    transition: all 0.2s ease;
+    position: relative;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.btn-action::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background-color: transparent;
+    transition: background-color 0.2s ease;
+    z-index: 0;
+}
+
+.btn-action:hover::before {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.btn-action .bi {
+    position: relative;
+    font-size: 1.2rem;
+    line-height: 1;
+    width: 1.2rem;
+    height: 1.2rem;
+    display: block;
+    z-index: 1;
+    transition: transform 0.2s ease;
+}
+
+.btn-action:hover .bi {
+    transform: scale(1.1);
+}
+
+/* Button Colors */
+.btn-action.has-comment .bi {
+    color: var(--bs-success);
+}
+
+.btn-action:not(.has-comment) .bi {
+    color: var(--bs-gray-500);
+}
+
+.btn-action.btn-file .bi {
+    color: var(--bs-primary);
+}
+
+.btn-action.text-primary .bi {
+    color: var(--bs-primary);
+}
+
+.btn-action.text-info .bi {
+    color: var(--bs-info);
+}
+
+/* Badge Styles */
+.badge {
+    font-weight: normal;
+    padding: 0.35em 0.65em;
+    min-width: 80px;
+    display: inline-block;
+    text-align: center;
+    border-radius: 4px;
 }
 
 .badge-created { background-color: #6c757d; color: white; }
@@ -84,60 +201,7 @@
 .badge-delivered { background-color: #198754; color: white; }
 .badge-problem { background-color: #dc3545; color: white; }
 
-.search-filter .form-group {
-    margin-bottom: 0;
-    flex: 1;
-    min-width: 200px;
-}
-
-.search-filter .btn {
-    height: calc(100% - 10px);
-}
-
-/* Responsive adjustments */
-@media (max-width: 992px) {
-    .sidebar {
-        width: 70px;
-        overflow: hidden;
-    }
-
-    .sidebar .logo h2,
-    .sidebar .nav-link span {
-        display: none;
-    }
-
-    .sidebar .nav-link {
-        justify-content: center;
-        padding: 15px;
-    }
-
-    .sidebar .nav-link i {
-        margin-right: 0;
-        font-size: 1.5rem;
-    }
-
-    .main {
-        margin-left: 70px;
-    }
-}
-
-@media (max-width: 768px) {
-    .content {
-        padding: 15px;
-    }
-
-    .header {
-        padding: 15px;
-    }
-
-    .search-filter {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-/* Modern table header styles */
-/* Modern table header styles */
+/* Modern Table Header */
 .table-header-modern th {
     background-color: #f8fafc;
     color: #475569;
@@ -150,12 +214,7 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    vertical-align: middle;
     transition: all 0.2s ease;
-}
-
-.table-header-modern th:hover {
-    background-color: #f1f5f9;
 }
 
 .header-cell-content {
@@ -166,7 +225,6 @@
     gap: 6px;
 }
 
-/* Стили для колонок с иконками */
 .column-with-icon {
     display: flex;
     flex-direction: column;
@@ -175,25 +233,47 @@
     gap: 4px;
 }
 
-.header-icon {
-    font-size: 1.1rem;
-    color: #64748b;
-    opacity: 0.9;
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    .sidebar {
+        width: 70px;
+        overflow: hidden;
+    }
+
+    .sidebar .nav-link {
+        justify-content: center;
+        padding: 15px;
+    }
+
+    .sidebar .nav-link i {
+        margin-right: 0;
+        font-size: 1.5rem;
+    }
 }
 
-/* First and last child border radius */
-.table-header-modern th:first-child {
-    border-radius: 8px 0 0 0;
-    padding-left: 16px;
-}
+@media (max-width: 768px) {
+    .content {
+        padding: 15px;
+    }
 
-.table-header-modern th:last-child {
-    border-radius: 0 8px 0 0;
-    padding-right: 16px;
-}
+    .search-filter {
+        flex-direction: column;
+    }
 
-/* Add subtle shadow when scrolling */
-.table-header-modern th {
-    box-shadow: 0 2px 2px -1px rgba(0,0,0,0.05);
-}
+    .table-hover td,
+    .table-hover th {
+        padding: 8px 4px;
+        font-size: 0.9rem;
+    }
 
+    .btn-action {
+        width: 32px;
+        height: 32px;
+    }
+
+    .btn-action .bi {
+        font-size: 1.1rem;
+        width: 1.1rem;
+        height: 1.1rem;
+    }
+}

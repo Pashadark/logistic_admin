@@ -89,6 +89,65 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Обработчик для кнопки отправки в группу
+    const sendToGroupBtn = document.getElementById('sendToGroupBtn');
+    if (sendToGroupBtn) {
+        sendToGroupBtn.addEventListener('click', function() {
+            const messageText = document.getElementById('botMessageText').value;
+            const originalText = sendToGroupBtn.innerHTML;
+
+            // Показываем индикатор загрузки
+            sendToGroupBtn.disabled = true;
+            sendToGroupBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Отправка...';
+
+            fetch('/system/test-bot/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: JSON.stringify({
+                    message: messageText,
+                    is_group_message: true
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+
+                    // Обновляем блок с результатом (если он есть)
+                    const resultDiv = document.getElementById('botTestResult');
+                    if (resultDiv) {
+                        resultDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                    }
+                } else {
+                    showToast(data.message || 'Произошла ошибка', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Ошибка сети: ' + error.message, 'error');
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                sendToGroupBtn.disabled = false;
+                sendToGroupBtn.innerHTML = originalText;
+            });
+        });
+    }
+
+    // Функция для получения CSRF токена
+    function getCSRFToken() {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1];
+        return cookieValue || '';
+    }
+
     // Запускаем обработку сообщений при загрузке
     processDjangoMessages();
 });

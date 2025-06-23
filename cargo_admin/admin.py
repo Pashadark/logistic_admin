@@ -1,19 +1,28 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 import csv
 from django.db.models import Q
 from django.utils.html import format_html
-from core.models import Profile, Shipment
-from .forms import ShipmentFilterForm  # Убедитесь, что этот импорт корректный
+from core.models import Shipment, Profile
+from .forms import ShipmentFilterForm
 
-# Модель Profile
-@admin.register(Profile)
-class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'phone', 'position')
-    search_fields = ('user__username', 'user__email', 'phone')
-    list_select_related = ('user',)
+User = get_user_model()
 
-# Модель Shipment
+class ProfileInline(admin.StackedInline):
+    model = Profile
+    can_delete = False
+    verbose_name_plural = 'Profile'
+    fk_name = 'user'
+
+class CustomUserAdmin(admin.ModelAdmin):
+    inlines = (ProfileInline,)
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
+    search_fields = ('username', 'email', 'first_name', 'last_name')
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
+
 @admin.register(Shipment)
 class ShipmentAdmin(admin.ModelAdmin):
     list_display = (
@@ -21,6 +30,7 @@ class ShipmentAdmin(admin.ModelAdmin):
         'get_type_display',
         'waybill_number',
         'city',
+        'weight',
         'get_status_badge',
         'timestamp',
         'actions_column'
@@ -32,7 +42,6 @@ class ShipmentAdmin(admin.ModelAdmin):
     actions = ['export_to_csv']
     change_list_template = 'admin/cargo_admin/shipment_change_list.html'
 
-    # Методы для Shipment
     def get_type_display(self, obj):
         return obj.get_type_display()
     get_type_display.short_description = 'Тип операции'
@@ -101,14 +110,15 @@ class ShipmentAdmin(admin.ModelAdmin):
         writer = csv.writer(response)
         writer.writerow([
             'ID', 'User ID', 'Type', 'Waybill Number',
-            'City', 'Status', 'Comment', 'Timestamp'
+            'City', 'Weight', 'Status', 'Comment', 'Timestamp'
         ])
 
         for obj in queryset:
             writer.writerow([
                 obj.id, obj.user_id, obj.get_type_display(),
-                obj.waybill_number, obj.city, obj.get_status_display(),
-                obj.comment, obj.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                obj.waybill_number, obj.city, obj.weight,
+                obj.get_status_display(), obj.comment,
+                obj.timestamp.strftime("%Y-%m-%d %H:%M:%S")
             ])
 
         return response

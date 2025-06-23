@@ -83,12 +83,20 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                {% if user.is_active %}
-                                                    <span class="badge bg-success">Активен</span>
-                                                {% else %}
-                                                    <span class="badge bg-danger">Заблокирован</span>
-                                                {% endif %}
-                                            </td>
+    {% if user.is_active %}
+        {% if user.profile.is_online %}
+            <span class="badge bg-success">Онлайн</span>
+        {% else %}
+            {% if user.profile.last_activity %}
+                <span class="badge bg-secondary">Был в сети {{ user.profile.last_activity|timesince }} назад</span>
+            {% else %}
+                <span class="badge bg-warning">Никогда не заходил</span>
+            {% endif %}
+        {% endif %}
+    {% else %}
+        <span class="badge bg-danger">Заблокирован</span>
+    {% endif %}
+</td>
                                             <td>
                                                 {% if user.groups.all %}
                                                     {% for group in user.groups.all %}
@@ -305,7 +313,7 @@
                 <div class="tab-pane fade" id="logs" role="tabpanel">
                     <div class="card shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="bi bi-journal-text"></i> Последние действия</h5>
+                            <h5 class="mb-0"> Последние действия</h5>
                             <button id="refreshLogsBtn" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-arrow-clockwise"></i> Обновить
                             </button>
@@ -684,18 +692,31 @@
 
     // Функция получения иконки для действия
     function getActionIcon(actionType) {
-        const icons = {
-            'LOGIN': 'bi-box-arrow-in-right',
-            'LOGOUT': 'bi-box-arrow-right',
-            'PROFILE_UPDATE': 'bi-person-lines-fill',
-            'PASSWORD_CHANGE': 'bi-shield-lock',
-            'BOT_TEST': 'bi-robot',
-            'SHIPMENT_CREATE': 'bi-plus-square',
-            'SHIPMENT_UPDATE': 'bi-pencil-square',
-            'SHIPMENT_DELETE': 'bi-trash',
-            'BACKUP_CREATE': 'bi-save',
-        };
-        return icons[actionType] || 'bi-activity';
-    }
+    const icons = {
+        'LOGIN': 'bi-box-arrow-in-right',
+        'LOGOUT': 'bi-box-arrow-right',
+        'PROFILE_UPDATE': 'bi-person-lines-fill',
+        'PASSWORD_CHANGE': 'bi-shield-lock',
+        'AVATAR_CHANGE': 'bi-person-circle',
+        'SHIPMENT_CREATE': 'bi-plus-square',
+        'SHIPMENT_UPDATE': 'bi-pencil-square',
+        'SHIPMENT_DELETE': 'bi-trash',
+        'SHIPMENT_STATUS': 'bi-arrow-repeat',
+        'SHIPMENT_VIEW': 'bi-eye',
+        '2FA_TOGGLE': 'bi-shield-check',
+        'BOT_TEST': 'bi-robot',
+        'BACKUP_CREATE': 'bi-save',
+        'BACKUP_DOWNLOAD': 'bi-download',
+        'BACKUP_INTERVAL_UPDATE': 'bi-clock-history',
+        'DATABASE_CLEAR': 'bi-database-dash',
+        'DATABASE_RESTORE': 'bi-database-check',
+        'BOT_ACCESS_UPDATE': 'bi-door-closed',
+        'USER_CREATE': 'bi-person-plus',
+        'USER_UPDATE': 'bi-person-gear',
+        'USER_DELETE': 'bi-person-dash',
+    };
+    return icons[actionType] || 'bi-activity';
+}
+
 </script>
 {% endblock %}
