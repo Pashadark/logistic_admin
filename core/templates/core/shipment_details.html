@@ -59,7 +59,7 @@
                         <span>{{ shipment.timestamp|date:"d.m.Y H:i" }}</span>
                     </div> <div class="info-item">
                         <span class="info-label">Вес:</span>
-                        <span>Тест</span>
+                        <span>{{ shipment.weight|default:"-" }}</span>
                     </div>
                 </div>
 

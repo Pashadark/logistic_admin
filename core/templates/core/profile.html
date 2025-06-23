@@ -30,12 +30,18 @@
                     </button>
                 </div>
 
-                <!-- Основная информация -->
                 <h3 class="mb-1">{{ user.get_full_name|default:user.username }}</h3>
-                <p class="text-muted mb-3">
-                    <i class="bi bi-person-badge me-1"></i>
-                    {{ user.profile.position|default:"Пользователь" }}
-                </p>
+<p class="text-muted mb-3">
+    {% if user.groups.all %}
+        <span class="badge
+            {% if 'Разработчик' in user.groups.all.0.name %}bg-dark
+            {% elif 'Менеджер' in user.groups.all.0.name %}bg-primary
+            {% elif 'Администратор' in user.groups.all.0.name %}bg-warning text-dark
+            {% else %}bg-secondary{% endif %}">
+            {{ user.groups.all.0.name }}
+        </span>
+    {% endif %}
+</p>
 
                 <!-- Статистика -->
                 <div class="d-flex justify-content-center mb-3">

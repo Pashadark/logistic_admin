@@ -10,6 +10,7 @@
 
         <div class="d-flex align-items-center">
             {% if user.is_authenticated %}
+            <!-- Кнопка уведомлений (оставлено без изменений) -->
             <div class="dropdown me-1">
                 <button class="btn-icon dropdown-toggle" id="notificationsDropdown"
                         data-bs-toggle="dropdown" aria-expanded="false" title="Уведомления">
@@ -52,6 +53,7 @@
             {% endif %}
 
             {% if user.is_authenticated %}
+            <!-- Меню пользователя -->
             <div class="dropdown">
                 <button class="user-menu-btn" id="userDropdown"
                         data-bs-toggle="dropdown" aria-expanded="false" title="Профиль">
@@ -94,13 +96,21 @@
                                         {{ user.username }}
                                     {% endif %}
                                 </h6>
-                                <small class="text-muted">
-                                    {% if user.profile and user.profile.position %}
-                                        {{ user.profile.position }}
-                                    {% else %}
-                                        Пользователь
-                                    {% endif %}
-                                </small>
+                                <!-- Добавляем цветной бейдж с группой -->
+                                {% if user.groups.all %}
+                                <div class="mt-1">
+                                    <span class="badge
+                                        {% if 'Developer' in user.groups.all.0.name %}bg-dark
+                                        {% elif 'Manager' in user.groups.all.0.name %}bg-primary
+                                        {% elif 'Administrator' in user.groups.all.0.name %}bg-warning text-dark
+                                        {% else %}bg-secondary{% endif %}">
+                                        {% if 'Developer' in user.groups.all.0.name %}Разработчик
+                                        {% elif 'Manager' in user.groups.all.0.name %}Менеджер
+                                        {% elif 'Administrator' in user.groups.all.0.name %}Администратор
+                                        {% else %}{{ user.groups.all.0.name }}{% endif %}
+                                    </span>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                     </li>
