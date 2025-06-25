@@ -1,23 +1,24 @@
 import os
 import uuid
 import logging
-import sqlite3
-from datetime import datetime
-from telegram import (
-    Update,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    ReplyKeyboardRemove
-)
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     Application,
     CommandHandler,
-    CallbackQueryHandler,
     MessageHandler,
-    ConversationHandler,
     ContextTypes,
-    filters
+    filters,
+    ConversationHandler
 )
+from asgiref.sync import sync_to_async
+
+# Инициализация Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'logistic_admin.settings')
+import django
+
+django.setup()
+
+from core.models import Shipment, User
 
 # Настройка логгирования
 logging.basicConfig(
@@ -28,381 +29,283 @@ logger = logging.getLogger(__name__)
 
 # Константы
 TOKEN = "7833491235:AAEeP3bJWIgWxAjdMhYv6zvTE6dIbe7Ob2U"
-GROUP_ID = -1002580459963
-DB_PATH = "cargo_bot.db"
+MEDIA_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'media')
+os.makedirs(os.path.join(MEDIA_ROOT, 'waybills'), exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'products'), exist_ok=True)
 
 # Состояния диалога
 (
-    MAIN_MENU, SETTINGS_MENU,
-    SEND_WAYBILL, SEND_PRODUCT, SEND_NUMBER, SEND_CITY, SEND_COMMENT,
-    RECEIVE_WAYBILL, RECEIVE_PRODUCT, RECEIVE_NUMBER, RECEIVE_CITY, RECEIVE_COMMENT,
-    TRANSFER_WAYBILL, TRANSFER_PRODUCT, TRANSFER_NUMBER, TRANSFER_CITY, TRANSFER_COMMENT
-) = range(17)
-
-# Статусы отправлений
-STATUSES = {
-    'created': '📝 Создано',
-    'processing': '🔄 В обработке',
-    'transit': '🚚 В пути',
-    'delivered': '✅ Доставлено',
-    'problem': '⚠️ Проблема'
-}
+    MAIN_MENU, TYPE_SELECTION, WAYBILL_NUMBER, CITY_SELECTION,
+    WEIGHT_INPUT, COMMENT_INPUT, WAYBILL_PHOTO, PRODUCT_PHOTO
+) = range(8)
 
 
-def get_db_connection():
-    """Создает соединение с базой данных"""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+def generate_short_id():
+    return str(uuid.uuid4().int)[:6].upper()
 
 
-def init_database():
-    """Инициализирует базу данных при первом запуске"""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS shipments (
-                id TEXT PRIMARY KEY,
-                user_id INTEGER,
-                type TEXT,
-                waybill_photo TEXT,
-                product_photo TEXT,
-                waybill_number TEXT,
-                city TEXT,
-                status TEXT DEFAULT 'created',
-                comment TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                telegram_waybill_file_id TEXT,
-                telegram_product_file_id TEXT
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY,
-                username TEXT,
-                first_name TEXT,
-                last_name TEXT,
-                notifications INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
-        conn.commit()
-    except Exception as e:
-        logger.error(f"Ошибка инициализации БД: {e}")
-    finally:
-        conn.close()
-
-
-def save_shipment(data):
-    """Сохраняет отправление в базу данных"""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            INSERT INTO shipments 
-            (id, user_id, type, waybill_number, city, status, comment, 
-             waybill_photo, product_photo, telegram_waybill_file_id, telegram_product_file_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            data['id'],
-            data['user_id'],
-            data['type'],
-            data['waybill_number'],
-            data['city'],
-            data.get('status', 'created'),
-            data.get('comment', ''),
-            data.get('waybill_photo', ''),
-            data.get('product_photo', ''),
-            data.get('telegram_waybill_file_id', ''),
-            data.get('telegram_product_file_id', '')
-        ))
-        conn.commit()
-        return True
-    except sqlite3.Error as e:
-        logger.error(f"Ошибка SQLite: {e}")
-        return False
-    finally:
-        conn.close()
-
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        user = update.effective_user
-        telegram_id = user.id
-
-        # Автоматическая регистрация нового пользователя
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT OR IGNORE INTO users 
-            (user_id, username, first_name, last_name) 
-            VALUES (?, ?, ?, ?)
-        ''', (
-            telegram_id,
-            user.username,
-            user.first_name,
-            user.last_name
-        ))
-        conn.commit()
-        conn.close()
-
-        context.user_data['user_id'] = telegram_id
-
-        await update.message.reply_text(
-            f"Привет, {user.first_name}! Я бот для учета грузоперевозок.",
-            reply_markup=main_menu_keyboard()
-        )
-        return MAIN_MENU
-    except Exception as e:
-        logger.error(f"Ошибка в start: {e}")
-        await update.message.reply_text(
-            "⚠️ Произошла ошибка. Попробуйте позже."
-        )
-        return ConversationHandler.END
-
-
-def main_menu_keyboard():
-    keyboard = [
-        [InlineKeyboardButton("📤 Отправление", callback_data='send')],
-        [InlineKeyboardButton("📥 Получение", callback_data='receive')],
-        [InlineKeyboardButton("🔄 Перемещение", callback_data='transfer')],
-        [InlineKeyboardButton("⚙️ Настройки", callback_data='settings')]
-    ]
-    return InlineKeyboardMarkup(keyboard)
-
-
-async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    await query.edit_message_text(
-        text="Главное меню:",
-        reply_markup=main_menu_keyboard()
-    )
-    return MAIN_MENU
-
-
-async def settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    await query.edit_message_text(
-        text="⚙️ Настройки:\n\nЗдесь можно настроить уведомления и другие параметры.",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("↩️ Назад", callback_data='main')]
-        ])
-    )
-    return SETTINGS_MENU
-
-
-async def handle_shipment_start(update: Update, context: ContextTypes.DEFAULT_TYPE, shipment_type):
-    query = update.callback_query
-    await query.answer()
-
-    type_name = {
-        'send': 'отправки',
-        'receive': 'получения',
-        'transfer': 'перемещения'
-    }.get(shipment_type, '')
-
-    context.user_data['shipment_type'] = shipment_type
-
-    await query.edit_message_text(
-        text=f"Добавление {type_name}. Пришлите фото накладной:",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("↩️ Назад", callback_data='main')]
-        ])
+@sync_to_async
+def get_or_create_user(user_id, first_name, last_name):
+    return User.objects.get_or_create(
+        username=str(user_id),
+        defaults={
+            'first_name': first_name or '',
+            'last_name': last_name or '',
+        }
     )
 
-    return {
-        'send': SEND_WAYBILL,
-        'receive': RECEIVE_WAYBILL,
-        'transfer': TRANSFER_WAYBILL
-    }.get(shipment_type)
+
+@sync_to_async
+def create_shipment(user_id, shipment_data):
+    user = User.objects.get(id=user_id)
+    return Shipment.objects.create(
+        id=generate_short_id(),
+        user=user,
+        type=shipment_data['type'],
+        waybill_number=shipment_data['waybill_number'],
+        city=shipment_data['city'],
+        weight=shipment_data.get('weight'),
+        comment=shipment_data.get('comment'),
+        status='created',
+        waybill_photo=shipment_data['waybill_photo'],
+        product_photo=shipment_data['product_photo'],
+    )
 
 
-async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE, photo_type, next_state):
-    try:
-        photo = update.message.photo[-1]
-        file_id = photo.file_id
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    user = update.message.from_user
+    logger.info(f"Пользователь {user.first_name} запустил бота")
 
-        context.user_data[f'{photo_type}_file_id'] = file_id
+    user_obj, created = await get_or_create_user(
+        user.id,
+        user.first_name,
+        user.last_name
+    )
 
+    context.user_data['user_id'] = user_obj.id
+    await update.message.reply_text(
+        "🚛 Добро пожаловать в бот для управления грузоперевозками!",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    return await ask_shipment_type(update, context)
+
+
+async def ask_shipment_type(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    keyboard = ReplyKeyboardMarkup([
+        ['📤 Отправка', '📥 Получение'],
+        ['🔄 Перемещение']
+    ], resize_keyboard=True, one_time_keyboard=True)
+
+    await update.message.reply_text(
+        "Тип отправки\nВыберите тип:",
+        reply_markup=keyboard
+    )
+    return TYPE_SELECTION
+
+
+async def handle_type_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    text = update.message.text
+    type_map = {
+        '📤 Отправка': 'send',
+        '📥 Получение': 'receive',
+        '🔄 Перемещение': 'transfer'
+    }
+
+    if text not in type_map:
+        await update.message.reply_text("Пожалуйста, выберите тип из предложенных вариантов")
+        return await ask_shipment_type(update, context)
+
+    context.user_data['shipment_data'] = {'type': type_map[text]}
+    return await ask_waybill_number(update, context)
+
+
+async def ask_waybill_number(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Номер накладной\nВведите номер накладной:",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    return WAYBILL_NUMBER
+
+
+async def handle_waybill_number(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    if not update.message.text:
+        await update.message.reply_text("Пожалуйста, введите номер накладной")
+        return await ask_waybill_number(update, context)
+
+    context.user_data['shipment_data']['waybill_number'] = update.message.text.strip()
+    return await ask_city(update, context)
+
+
+async def ask_city(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    keyboard = ReplyKeyboardMarkup([
+        ['Москва', 'Санкт-Петербург'],
+        ['Новосибирск', 'Екатеринбург'],
+        ['Другой город']
+    ], resize_keyboard=True, one_time_keyboard=True)
+
+    await update.message.reply_text(
+        "Город\nВыберите город:",
+        reply_markup=keyboard
+    )
+    return CITY_SELECTION
+
+
+async def handle_city_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    city = update.message.text
+    if city == 'Другой город':
         await update.message.reply_text(
-            f"Фото {'накладной' if photo_type == 'waybill' else 'товара'} получено. " +
-            ("Теперь пришлите фото товара:" if photo_type == 'waybill' else "Введите номер накладной:"),
+            "Введите название города:",
             reply_markup=ReplyKeyboardRemove()
         )
-        return next_state
-    except Exception as e:
-        logger.error(f"Ошибка обработки фото: {e}")
-        await update.message.reply_text(
-            "Не удалось обработать фото. Попробуйте еще раз."
-        )
-        return MAIN_MENU
+        return CITY_SELECTION
+
+    context.user_data['shipment_data']['city'] = city
+    return await ask_weight(update, context)
 
 
-async def handle_waybill_number(update: Update, context: ContextTypes.DEFAULT_TYPE, next_state):
-    waybill_number = update.message.text
-    context.user_data['waybill_number'] = waybill_number
-
+async def ask_weight(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(
-        "Номер накладной сохранен. Укажите город:",
+        "Вес (кг)\nВведите вес в килограммах (например: 12.5):",
         reply_markup=ReplyKeyboardRemove()
     )
-    return next_state
+    return WEIGHT_INPUT
 
 
-async def handle_city(update: Update, context: ContextTypes.DEFAULT_TYPE, next_state):
-    city = update.message.text
-    context.user_data['city'] = city
-
-    await update.message.reply_text(
-        "Город сохранен. Добавьте комментарий (или нажмите /skip):",
-        reply_markup=ReplyKeyboardRemove()
-    )
-    return next_state
-
-
-async def skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['comment'] = ""
-    return await finalize_shipment(update, context)
-
-
-async def handle_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['comment'] = update.message.text
-    return await finalize_shipment(update, context)
-
-
-async def finalize_shipment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_weight_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     try:
-        shipment_id = str(uuid.uuid4())
-        user_data = context.user_data
+        weight = float(update.message.text)
+        context.user_data['shipment_data']['weight'] = weight
+    except ValueError:
+        await update.message.reply_text("Пожалуйста, введите число (например: 12.5)")
+        return await ask_weight(update, context)
 
-        success = save_shipment({
-            'id': shipment_id,
-            'user_id': user_data['user_id'],
-            'type': user_data['shipment_type'],
-            'waybill_number': user_data['waybill_number'],
-            'city': user_data['city'],
-            'comment': user_data.get('comment', ''),
-            'telegram_waybill_file_id': user_data.get('waybill_file_id', ''),
-            'telegram_product_file_id': user_data.get('product_file_id', '')
-        })
+    return await ask_comment(update, context)
 
-        if not success:
-            raise Exception("Ошибка сохранения в БД")
 
-        type_name = {
-            'send': 'ОТПРАВКА',
-            'receive': 'ПОЛУЧЕНИЕ',
-            'transfer': 'ПЕРЕМЕЩЕНИЕ'
-        }.get(user_data['shipment_type'], 'ОТПРАВКА')
+async def ask_comment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Комментарий\nВведите дополнительную информацию (или отправьте '-' чтобы пропустить):",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    return COMMENT_INPUT
 
-        message = (
-            f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
-            f"🔹 НОВАЯ {type_name} 🔹\n"
-            f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n"
-            f"▪️ Номер: {user_data['waybill_number']}\n"
-            f"▪️ Город: {user_data['city']}\n"
-            f"▪️ Статус: {STATUSES['created']}\n"
-            f"▪️ Комментарий: {user_data.get('comment', 'нет')}"
-        )
 
-        await context.bot.send_message(
-            chat_id=GROUP_ID,
-            text=message
+async def handle_comment_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    comment = update.message.text
+    if comment != '-':
+        context.user_data['shipment_data']['comment'] = comment
+
+    return await ask_waybill_photo(update, context)
+
+
+async def ask_waybill_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Фото накладной\nОтправьте фото накладной (JPG/PNG, макс. 5MB):",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    return WAYBILL_PHOTO
+
+
+async def handle_waybill_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    if not update.message.photo:
+        await update.message.reply_text("Пожалуйста, отправьте фото накладной")
+        return await ask_waybill_photo(update, context)
+
+    photo = update.message.photo[-1]
+    filename = f"waybill_{generate_short_id()}.jpg"
+    rel_path = os.path.join('waybills', filename)
+    full_path = os.path.join(MEDIA_ROOT, rel_path)
+
+    file = await photo.get_file()
+    await file.download_to_drive(full_path)
+
+    context.user_data['shipment_data']['waybill_photo'] = rel_path
+    return await ask_product_photo(update, context)
+
+
+async def ask_product_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Фото товара\nОтправьте фото товара (JPG/PNG, макс. 5MB):",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    return PRODUCT_PHOTO
+
+
+async def handle_product_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    if not update.message.photo:
+        await update.message.reply_text("Пожалуйста, отправьте фото товара")
+        return await ask_product_photo(update, context)
+
+    photo = update.message.photo[-1]
+    filename = f"product_{generate_short_id()}.jpg"
+    rel_path = os.path.join('products', filename)
+    full_path = os.path.join(MEDIA_ROOT, rel_path)
+
+    file = await photo.get_file()
+    await file.download_to_drive(full_path)
+
+    context.user_data['shipment_data']['product_photo'] = rel_path
+
+    # Сохраняем отправку
+    try:
+        shipment = await create_shipment(
+            context.user_data['user_id'],
+            context.user_data['shipment_data']
         )
 
         await update.message.reply_text(
-            "✅ Данные успешно сохранены!",
-            reply_markup=main_menu_keyboard()
+            f"✅ Отправка успешно зарегистрирована!\n"
+            f"ID: <code>{shipment.id}</code>\n"
+            f"Тип: {shipment.get_type_display()}\n"
+            f"Накладная: {shipment.waybill_number}\n"
+            f"Город: {shipment.city}\n"
+            f"Вес: {shipment.weight} кг",
+            parse_mode='HTML',
+            reply_markup=ReplyKeyboardRemove()
         )
 
-        return MAIN_MENU
     except Exception as e:
-        logger.error(f"Ошибка завершения отправки: {e}")
+        logger.error(f"Ошибка сохранения: {str(e)}", exc_info=True)
         await update.message.reply_text(
             "⚠️ Произошла ошибка при сохранении. Попробуйте позже.",
-            reply_markup=main_menu_keyboard()
-        )
-        return MAIN_MENU
-
-
-async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.error("Ошибка:", exc_info=context.error)
-
-    if update and update.effective_chat:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="⚠️ Произошла ошибка. Попробуйте позже."
+            reply_markup=ReplyKeyboardRemove()
         )
 
+    context.user_data.pop('shipment_data', None)
+    return ConversationHandler.END
 
-def main():
-    init_database()
 
-    application = Application.builder() \
-        .token(TOKEN) \
-        .read_timeout(30) \
-        .write_timeout(30) \
-        .connect_timeout(30) \
-        .build()
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Действие отменено",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    context.user_data.clear()
+    return ConversationHandler.END
 
-    def create_shipment_conv(shipment_type, waybill_state, product_state, number_state, city_state, comment_state):
-        return ConversationHandler(
-            entry_points=[CallbackQueryHandler(
-                lambda u, c: handle_shipment_start(u, c, shipment_type),
-                pattern=f'^{shipment_type}$')],
-            states={
-                waybill_state: [MessageHandler(
-                    filters.PHOTO,
-                    lambda u, c: handle_photo(u, c, 'waybill', product_state))],
-                product_state: [MessageHandler(
-                    filters.PHOTO,
-                    lambda u, c: handle_photo(u, c, 'product', number_state))],
-                number_state: [MessageHandler(
-                    filters.TEXT & ~filters.COMMAND,
-                    lambda u, c: handle_waybill_number(u, c, city_state))],
-                city_state: [MessageHandler(
-                    filters.TEXT & ~filters.COMMAND,
-                    lambda u, c: handle_city(u, c, comment_state))],
-                comment_state: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_comment),
-                    CommandHandler('skip', skip_comment)
-                ]
-            },
-            fallbacks=[CallbackQueryHandler(main_menu, pattern='^main$')],
-            map_to_parent={MAIN_MENU: MAIN_MENU},
-            per_message=False
-        )
 
-    main_conv = ConversationHandler(
+def main() -> None:
+    application = Application.builder().token(TOKEN).build()
+
+    conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            MAIN_MENU: [
-                create_shipment_conv('send', SEND_WAYBILL, SEND_PRODUCT, SEND_NUMBER, SEND_CITY, SEND_COMMENT),
-                create_shipment_conv('receive', RECEIVE_WAYBILL, RECEIVE_PRODUCT, RECEIVE_NUMBER, RECEIVE_CITY,
-                                     RECEIVE_COMMENT),
-                create_shipment_conv('transfer', TRANSFER_WAYBILL, TRANSFER_PRODUCT, TRANSFER_NUMBER, TRANSFER_CITY,
-                                     TRANSFER_COMMENT),
-                CallbackQueryHandler(settings_menu, pattern='^settings$')
-            ],
-            SETTINGS_MENU: [
-                CallbackQueryHandler(main_menu, pattern='^main$')
-            ]
+            TYPE_SELECTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_type_selection)],
+            WAYBILL_NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_waybill_number)],
+            CITY_SELECTION: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_city_selection)],
+            WEIGHT_INPUT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_weight_input)],
+            COMMENT_INPUT: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_comment_input)],
+            WAYBILL_PHOTO: [MessageHandler(filters.PHOTO, handle_waybill_photo)],
+            PRODUCT_PHOTO: [MessageHandler(filters.PHOTO, handle_product_photo)],
         },
-        fallbacks=[]
+        fallbacks=[CommandHandler('cancel', cancel)],
+        allow_reentry=True
     )
 
-    application.add_handler(main_conv)
-    application.add_error_handler(error_handler)
+    application.add_handler(conv_handler)
 
-    application.run_polling(drop_pending_updates=True)
+    logger.info("Бот запущен")
+    application.run_polling()
 
 
 if __name__ == '__main__':

@@ -14,13 +14,14 @@ from django.views.generic import TemplateView
 from django.core import serializers
 from django.conf import settings
 from django.core.paginator import Paginator
-from django.db.models import Q
 from django.contrib.auth import logout as auth_logout
 from django.shortcuts import redirect
 from django.contrib import messages
 from .models import Profile, Shipment, UserActivity
 import requests
 import io
+from django.db.models import Q, Count
+
 
 
 def is_admin(user):
@@ -301,45 +302,47 @@ def get_activity_logs(request):
 
 
 @staff_member_required
+@require_POST
 def admin_create_backup(request):
-    if request.method == 'POST':
-        try:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup_filename = f"backup_{timestamp}.json"
-            backup_path = os.path.join(settings.BACKUP_PATH, backup_filename)
+    try:
+        # Создаем директорию для бэкапов, если ее нет
+        os.makedirs(settings.BACKUP_PATH, exist_ok=True)
 
-            os.makedirs(settings.BACKUP_PATH, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_filename = f"backup_{timestamp}.json"
+        backup_path = os.path.join(settings.BACKUP_PATH, backup_filename)
 
-            data = {
-                'users': serializers.serialize('json', User.objects.all()),
-                'profiles': serializers.serialize('json', Profile.objects.all()),
-                'backup_created': timestamp,
-                'created_by': request.user.username
-            }
+        # Собираем данные для бэкапа
+        data = {
+            'users': serializers.serialize('json', User.objects.all()),
+            'profiles': serializers.serialize('json', Profile.objects.all()),
+            'backup_created': timestamp,
+            'created_by': request.user.username
+        }
 
-            with open(backup_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+        # Сохраняем бэкап
+        with open(backup_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
-            UserActivity.objects.create(
-                user=request.user,
-                action_type='BACKUP_CREATE',
-                description='Создан резервная копия данных',
-                metadata={'backup_file': backup_filename}
-            )
+        # Записываем действие в лог
+        UserActivity.objects.create(
+            user=request.user,
+            action_type='BACKUP_CREATE',
+            description='Создан резервная копия данных',
+            metadata={'backup_file': backup_filename}
+        )
 
-            return JsonResponse({
-                'success': True,
-                'message': 'Резервная копия успешно создана',
-                'backup_filename': backup_filename
-            })
+        return JsonResponse({
+            'success': True,
+            'message': 'Резервная копия успешно создана',
+            'backup_filename': backup_filename
+        })
 
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': str(e)
-            }, status=500)
-
-    return JsonResponse({'success': False, 'message': 'Неверный метод запроса'}, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        }, status=500)
 
 
 @staff_member_required
@@ -533,32 +536,42 @@ class DashboardView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        search_query = self.request.GET.get('search', '')
-        status_filter = self.request.GET.get('status', '')
-        type_filter = self.request.GET.get('type', '')
+        request = self.request
+        search_query = request.GET.get('search', '')
+        status_filter = request.GET.get('status', '')
+        type_filter = request.GET.get('type', '')
 
+        # Базовый запрос с аннотацией для оптимизации
         shipments = Shipment.objects.all().order_by('-timestamp')
 
+        # Применение фильтров
         if search_query:
             shipments = shipments.filter(
                 Q(waybill_number__icontains=search_query) |
                 Q(city__icontains=search_query) |
                 Q(id__icontains=search_query)
             )
+
         if status_filter:
             shipments = shipments.filter(status=status_filter)
+
         if type_filter:
             shipments = shipments.filter(type=type_filter)
 
+        # Пагинация
         paginator = Paginator(shipments, 10)
-        page_number = self.request.GET.get('page')
+        page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
+
+        # Оптимизированный подсчет статусов за один запрос
+        status_counts = shipments.values('status').annotate(count=Count('status'))
+        status_counts_dict = {item['status']: item['count'] for item in status_counts}
 
         context.update({
             'total_shipments': shipments.count(),
-            'created_count': shipments.filter(status='created').count(),
-            'delivered_count': shipments.filter(status='delivered').count(),
-            'problem_count': shipments.filter(status='problem').count(),
+            'created_count': status_counts_dict.get('created', 0),
+            'delivered_count': status_counts_dict.get('delivered', 0),
+            'problem_count': status_counts_dict.get('problem', 0),
             'shipments': page_obj,
             'search_query': search_query,
             'status_filter': status_filter,

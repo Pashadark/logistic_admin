@@ -17,6 +17,7 @@ const config = {
     }
 };
 
+
 // Получение CSRF токена
 function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';

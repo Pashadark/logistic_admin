@@ -98,13 +98,15 @@
     {% endif %}
 </td>
                                             <td>
-                                                {% if user.groups.all %}
-                                                    {% for group in user.groups.all %}
-                                                        <span class="badge bg-info">{{ group.name }}</span>
-                                                    {% endfor %}
-                                                {% else %}
-                                                    <span class="badge bg-warning">Нет группы</span>
-                                                {% endif %}
+    {% if user.groups.all %}
+        <span class="badge
+            {% if 'Разработчик' in user.groups.all.0.name %}bg-dark
+            {% elif 'Менеджер' in user.groups.all.0.name %}bg-primary
+            {% elif 'Администратор' in user.groups.all.0.name %}bg-warning text-dark
+            {% else %}bg-secondary{% endif %}">
+            {{ user.groups.all.0.name }}
+        </span>
+    {% endif %}
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm">
@@ -559,38 +561,83 @@
         }
 
         // Обработчик создания бэкапа
-        const createBackupBtn = document.getElementById('createBackupBtn');
-        if (createBackupBtn) {
-            createBackupBtn.addEventListener('click', function() {
-                const originalText = this.innerHTML;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Создание...';
-                this.disabled = true;
+const createBackupBtn = document.getElementById('createBackupBtn');
+if (createBackupBtn) {
+    createBackupBtn.addEventListener('click', function() {
+        const originalText = this.innerHTML;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Создание...';
+        this.disabled = true;
 
-                fetch('/system/create-backup/', {  // ИСПРАВЛЕННЫЙ URL
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': getCSRFToken(),
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Бэкап успешно создан!');
-                        document.getElementById('downloadBackupBtn').disabled = false;
-                        document.getElementById('lastBackupInfo').value = data.backup_filename;
-                    } else {
-                        alert('Ошибка: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('Ошибка: ' + error);
-                })
-                .finally(() => {
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                });
-            });
+        // Создаем контейнер для уведомлений, если его нет
+        let alertsContainer = document.getElementById('backupAlertsContainer');
+        if (!alertsContainer) {
+            alertsContainer = document.createElement('div');
+            alertsContainer.id = 'backupAlertsContainer';
+            alertsContainer.className = 'mb-3';
+            this.parentNode.insertBefore(alertsContainer, this);
         }
+
+        // Создаем badge alert для статуса операции
+        const statusBadge = document.createElement('div');
+        statusBadge.className = 'alert alert-info alert-dismissible fade show';
+        statusBadge.role = 'alert';
+        statusBadge.innerHTML = `
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <span>Идет создание резервной копии...</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        alertsContainer.appendChild(statusBadge);
+
+        fetch('/system/create-backup/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Обновляем статус на успешный
+                statusBadge.className = 'alert alert-success alert-dismissible fade show';
+                statusBadge.innerHTML = `
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span>Бэкап успешно создан: ${data.backup_filename}</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+
+                document.getElementById('downloadBackupBtn').disabled = false;
+                document.getElementById('lastBackupInfo').value = data.backup_filename;
+            } else {
+                // Обновляем статус на ошибку
+                statusBadge.className = 'alert alert-danger alert-dismissible fade show';
+                statusBadge.innerHTML = `
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span>Ошибка: ${data.message || 'Неизвестная ошибка'}</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+            }
+        })
+        .catch(error => {
+            // Обновляем статус на ошибку сети
+            statusBadge.className = 'alert alert-danger alert-dismissible fade show';
+            statusBadge.innerHTML = `
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span>Ошибка сети: ${error.message}</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+        })
+        .finally(() => {
+            this.innerHTML = originalText;
+            this.disabled = false;
+
+            // Автоматическое скрытие через 5 секунд
+            setTimeout(() => {
+                const bsAlert = new bootstrap.Alert(statusBadge);
+                bsAlert.close();
+            }, 5000);
+        });
+    });
+}
 
         // Обработчик скачивания бэкапа
         const downloadBackupBtn = document.getElementById('downloadBackupBtn');
